@@ -54,11 +54,9 @@ const marketStore = useMarketStore()
 
 defineEmits(['toggle-cart'])
 
-// Esta función es la única que consulta la API. El navegador NO filtra nada.
 const cargarProductosDesdeAPI = async () => {
   cargando.value = true
   try {
-    // Le enviamos los parámetros de búsqueda a la capa de red (futuro Spring Boot)
     const data = await fetchProductos(marketStore.searchQuery, marketStore.selectedCategory)
     productos.value = data
   } catch (error) {
@@ -68,13 +66,10 @@ const cargarProductosDesdeAPI = async () => {
   }
 }
 
-// Inicialización
 onMounted(async () => {
-  // Primero cargamos sin filtros para obtener todo
   const todosLosProductos = await fetchProductos()
   productos.value = todosLosProductos
 
-  // Extraemos las categorías para el menú desplegable y las guardamos en Pinia
   const cats = [...new Set(todosLosProductos.map((p) => p.Categoria).filter(Boolean))] as string[]
   marketStore.setCategories(cats)
 
@@ -84,9 +79,9 @@ onMounted(async () => {
 
 <style scoped>
 .home-view {
-  background: #0f1215;
+  background: var(--bg-main);
   min-height: 100vh;
-  color: #ffffff;
+  color: var(--text-main);
 }
 .hero {
   height: 300px;
@@ -107,7 +102,7 @@ onMounted(async () => {
   color: white;
   margin: 0;
   letter-spacing: 5px;
-  filter: drop-shadow(0 0 10px #ff0000);
+  filter: drop-shadow(0 0 10px var(--accent));
   text-transform: uppercase;
 }
 .hero-subtitle {
@@ -127,14 +122,14 @@ onMounted(async () => {
 .loading-msg {
   text-align: center;
   font-size: 1.5rem;
-  color: #8b949e;
+  color: var(--text-muted);
   margin-top: 50px;
 }
 
 .marquee-section {
-  background: #161b22;
+  background: var(--bg-panel);
   padding: 10px 0;
-  border-bottom: 1px solid #30363d;
+  border-bottom: 1px solid var(--border);
   overflow: hidden;
   white-space: nowrap;
 }
@@ -151,13 +146,13 @@ onMounted(async () => {
   font-size: 13px;
   font-weight: bold;
   cursor: pointer;
-  color: #fff;
+  color: var(--text-main);
 }
 .m-item img {
   width: 35px;
   height: 35px;
   border-radius: 50%;
-  border: 2px solid #ff0000;
+  border: 2px solid var(--accent);
   object-fit: cover;
   background: white;
 }

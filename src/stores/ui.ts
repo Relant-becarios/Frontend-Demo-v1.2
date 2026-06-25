@@ -5,7 +5,19 @@ export const useUiStore = defineStore('ui', () => {
   const isCartOpen = ref(false)
   const isMenuOpen = ref(false)
   const isAuthModalOpen = ref(false)
-  const isChatOpen = ref(false) // NUEVO
+  const isChatOpen = ref(false)
+
+  // LÓGICA DE TEMAS
+  // Lee de localStorage o usa 'dark' por defecto
+  const temaActual = ref(localStorage.getItem('tema') || 'dark')
+  // Aplica el tema al cargar
+  document.documentElement.setAttribute('data-theme', temaActual.value)
+
+  function toggleTema() {
+    temaActual.value = temaActual.value === 'dark' ? 'light' : 'dark'
+    document.documentElement.setAttribute('data-theme', temaActual.value)
+    localStorage.setItem('tema', temaActual.value)
+  }
 
   function toggleCart() {
     isCartOpen.value = !isCartOpen.value
@@ -55,10 +67,12 @@ export const useUiStore = defineStore('ui', () => {
     isMenuOpen,
     isAuthModalOpen,
     isChatOpen,
+    temaActual,
     toggleCart,
     toggleMenu,
     toggleAuthModal,
     toggleChat,
+    toggleTema,
     closeAll,
   }
 })

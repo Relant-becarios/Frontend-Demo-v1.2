@@ -80,7 +80,7 @@ const scrollBottom = async () => {
   right: -420px;
   width: 400px;
   height: 100vh;
-  background: #161b22;
+  background: var(--bg-panel);
   z-index: 9500;
   transition: right 0.4s ease;
   display: flex;
@@ -93,7 +93,7 @@ const scrollBottom = async () => {
 }
 .chat-header {
   padding: 20px;
-  background: #0d1117;
+  background: var(--bg-input);
   border-bottom: 1px solid #30363d;
   display: flex;
   justify-content: space-between;

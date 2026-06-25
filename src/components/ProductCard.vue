@@ -36,14 +36,14 @@ const añadirAlCarrito = () => {
 
 <style scoped>
 .card {
-  background: #161b22;
-  border: 1px solid #30363d;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 15px;
   text-align: center;
   transition: 0.3s;
   cursor: pointer;
-  color: #ffffff;
+  color: var(--text-main);
 }
 
 .card:hover {
@@ -55,7 +55,7 @@ const añadirAlCarrito = () => {
   width: 100%;
   height: 160px;
   object-fit: contain;
-  background: rgb(255, 255, 255);
+  background: white;
   border-radius: 5px;
   margin-bottom: 10px;
 }
@@ -68,13 +68,13 @@ const añadirAlCarrito = () => {
 }
 
 .card-price {
-  color: #ff0000;
+  color: var(--accent);
   font-weight: bold;
   font-size: 18px;
 }
 
 .btn-add {
-  background: #ff0000;
+  background: var(--accent);
   color: white;
   border: none;
   padding: 10px;
@@ -87,6 +87,6 @@ const añadirAlCarrito = () => {
 }
 
 .btn-add:hover {
-  background: #cc0000;
+  background: var(--accent-hover);
 }
 </style>

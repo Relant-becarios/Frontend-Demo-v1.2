@@ -28,12 +28,10 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 
-// Variables reactivas (arrancan en 0)
 const gota = ref<number>(0)
 const gramaje = ref<number>(0)
 const tiempo = ref<number>(0)
 
-// Computed property que hace el cálculo matematico de forma automática
 const resultado = computed(() => {
   if (tiempo.value !== 0) {
     return (gota.value * gramaje.value) / tiempo.value
@@ -44,24 +42,21 @@ const resultado = computed(() => {
 
 <style scoped>
 .industrial-calc-section {
-  background: #161b22;
-  color: #ffffff;
+  background: var(--bg-panel);
+  color: var(--text-main);
   padding: 50px 5%;
   text-align: center;
-  border-top: 2px solid #ff0000;
-  /* Ajustamos la altura para que abarque toda la pantalla menos el Navbar */
+  border-top: 2px solid var(--accent);
   min-height: calc(100vh - 60px);
   display: flex;
   flex-direction: column;
   justify-content: center;
 }
-
 .calc-title {
   letter-spacing: 2px;
-  color: #ff0000;
+  color: var(--accent);
   margin-bottom: 40px;
 }
-
 .calc-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -70,46 +65,40 @@ const resultado = computed(() => {
   margin: 0 auto;
   width: 100%;
 }
-
 .input-card {
-  background: #0d1117;
+  background: var(--bg-input);
   padding: 20px;
   border-radius: 12px;
-  border: 1px solid #30363d;
+  border: 1px solid var(--border);
 }
-
 .input-label {
   display: block;
-  color: #ff0000;
+  color: var(--accent);
   font-size: 12px;
   font-weight: bold;
   margin-bottom: 10px;
 }
-
 .calc-input {
   width: 100%;
   background: transparent;
   border: none;
-  border-bottom: 1px solid #30363d;
-  color: white;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-main);
   text-align: center;
   font-size: 24px;
   outline: none;
   padding: 5px;
 }
-
 .calc-input::-webkit-outer-spin-button,
 .calc-input::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
-
 .result-title {
   font-size: 40px;
   margin-top: 50px;
 }
-
 .result-value {
-  color: #ff0000;
+  color: var(--accent);
 }
 </style>

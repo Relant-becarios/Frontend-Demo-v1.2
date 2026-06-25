@@ -28,7 +28,7 @@ const navegarA = (ruta: string) => {
   right: -320px;
   width: 300px;
   height: 100vh;
-  background: #161b22;
+  background: var(--bg-panel);
   z-index: 10000;
   transition: 0.4s ease;
   border-left: 2px solid #ff0000;

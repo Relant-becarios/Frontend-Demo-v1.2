@@ -56,13 +56,12 @@ const procesarFormulario = async () => {
     } else {
       await authStore.iniciarSesion(email.value, password.value)
     }
-    uiStore.closeAll() // Cerramos al tener éxito
+    uiStore.closeAll()
     email.value = ''
     password.value = ''
   } catch (error: unknown) {
     console.error(error)
-    errorMsg.value =
-      'Error: Verifica tus credenciales (la contraseña debe tener al menos 6 caracteres).'
+    errorMsg.value = 'Error: Verifica tus credenciales (mínimo 6 caracteres).'
   } finally {
     procesando.value = false
   }
@@ -83,13 +82,13 @@ const procesarFormulario = async () => {
   justify-content: center;
 }
 .auth-content {
-  background: #161b22;
+  background: var(--bg-panel);
   width: 100%;
   max-width: 400px;
   padding: 30px;
   border-radius: 12px;
-  border: 1px solid #30363d;
-  color: white;
+  border: 1px solid var(--border);
+  color: var(--text-main);
   box-sizing: border-box;
 }
 .auth-header {
@@ -99,7 +98,7 @@ const procesarFormulario = async () => {
   margin-bottom: 25px;
 }
 .auth-title {
-  color: #ff0000;
+  color: var(--accent);
   margin: 0;
 }
 .close-icon {
@@ -113,22 +112,22 @@ const procesarFormulario = async () => {
 }
 .input-group label {
   font-size: 12px;
-  color: #8b949e;
+  color: var(--text-muted);
   margin-bottom: 5px;
   display: block;
 }
 .input-group input {
   width: 100%;
   padding: 12px;
-  background: #0d1117;
-  border: 1px solid #30363d;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
   border-radius: 6px;
-  color: white;
+  color: var(--text-main);
   outline: none;
   box-sizing: border-box;
 }
 .btn-auth {
-  background: #ff0000;
+  background: var(--accent);
   color: white;
   border: none;
   padding: 12px;
@@ -139,10 +138,11 @@ const procesarFormulario = async () => {
   margin-top: 10px;
 }
 .btn-auth:hover:not(:disabled) {
-  background: #cc0000;
+  background: var(--accent-hover);
 }
 .btn-auth:disabled {
-  background: #444;
+  background: var(--border);
+  color: var(--text-muted);
   cursor: not-allowed;
 }
 .error-msg {
@@ -154,10 +154,10 @@ const procesarFormulario = async () => {
   margin-top: 20px;
   text-align: center;
   font-size: 13px;
-  color: #8b949e;
+  color: var(--text-muted);
 }
 .auth-toggle a {
-  color: #ff0000;
+  color: var(--accent);
   cursor: pointer;
   text-decoration: underline;
 }

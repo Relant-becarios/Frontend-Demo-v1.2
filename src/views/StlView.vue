@@ -302,7 +302,7 @@ onBeforeUnmount(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: #161b22;
+  background: var(--bg-panel);
   border-radius: 20px;
   transition: all 0.3s ease;
 }

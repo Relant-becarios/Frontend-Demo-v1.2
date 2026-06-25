@@ -88,7 +88,7 @@ const ejecutarBusqueda = () => {
   align-items: center;
   justify-content: space-between;
   padding: 10px 5%;
-  background: #161b22;
+  background: var(--bg-panel);
   border-bottom: 1px solid #30363d;
   position: sticky;
   top: 0;
@@ -107,7 +107,7 @@ const ejecutarBusqueda = () => {
   flex-grow: 1;
   max-width: 550px;
   margin: 0 20px;
-  background: #0d1117;
+  background: var(--bg-input);
   border: 1px solid #30363d;
   border-radius: 25px;
   position: relative;
@@ -146,7 +146,7 @@ const ejecutarBusqueda = () => {
 .dropdown-content {
   display: none;
   position: absolute;
-  background: #161b22;
+  background: var(--bg-panel);
   min-width: 220px;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
   z-index: 3000;

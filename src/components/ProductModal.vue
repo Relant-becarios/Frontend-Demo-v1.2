@@ -98,7 +98,7 @@ const resetZoom = () => {
   padding: 20px;
 }
 .modal-content {
-  background: #161b22;
+  background: var(--bg-panel);
   max-width: 950px;
   width: 100%;
   border-radius: 15px;

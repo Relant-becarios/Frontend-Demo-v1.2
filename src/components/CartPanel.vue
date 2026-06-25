@@ -10,7 +10,7 @@
 
       <div v-else v-for="item in cartDetails" :key="item.id" class="cart-item">
         <img
-          :src="item.Imagen_URL || item.imagen || 'https://via.placeholder.com/150'"
+          :src="item.Imagen_URL || 'https://via.placeholder.com/150'"
           width="50"
           height="50"
           class="item-img"
@@ -75,7 +75,6 @@ const cartDetails = computed(() => {
       ...cartItem,
       Producto: productDetail?.Producto || 'Cargando...',
       Imagen_URL: productDetail?.Imagen_URL || productDetail?.imagen || '',
-      imagen: productDetail?.imagen || '',
     }
   })
 })
@@ -116,15 +115,15 @@ const procesarCompra = async () => {
   right: -420px;
   width: 380px;
   height: 100vh;
-  background: #161b22;
+  background: var(--bg-panel);
   z-index: 9000;
   transition: right 0.4s ease;
   padding: 20px;
-  border-left: 2px solid #ff0000;
+  border-left: 2px solid var(--accent);
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  color: #fff;
+  color: var(--text-main);
 }
 .cart-panel.open {
   right: 0;
@@ -136,7 +135,7 @@ const procesarCompra = async () => {
   margin-bottom: 20px;
 }
 .cart-header h2 {
-  color: #ff0000;
+  color: var(--accent);
   margin: 0;
 }
 .close-btn {
@@ -149,7 +148,7 @@ const procesarCompra = async () => {
 }
 .empty-cart {
   text-align: center;
-  color: #8b949e;
+  color: var(--text-muted);
   margin-top: 50px;
 }
 .cart-item {
@@ -157,7 +156,7 @@ const procesarCompra = async () => {
   align-items: center;
   gap: 10px;
   margin-bottom: 15px;
-  border-bottom: 1px solid #30363d;
+  border-bottom: 1px solid var(--border);
   padding-bottom: 10px;
 }
 .item-img {
@@ -172,9 +171,9 @@ const procesarCompra = async () => {
 .cart-qty-input {
   width: 55px;
   padding: 5px;
-  border: 1px solid #30363d;
-  background: #0d1117;
-  color: #ffffff;
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  color: var(--text-main);
   border-radius: 4px;
   text-align: center;
   margin-top: 5px;
@@ -182,17 +181,17 @@ const procesarCompra = async () => {
 .remove-btn {
   background: none;
   border: none;
-  color: #ff0000;
+  color: var(--accent);
   cursor: pointer;
   font-weight: bold;
 }
 .cart-footer {
   padding-top: 15px;
-  border-top: 1px solid #30363d;
+  border-top: 1px solid var(--border);
 }
 .security-note {
   font-size: 11px;
-  color: #8b949e;
+  color: var(--text-muted);
   margin-bottom: 10px;
   text-align: center;
 }
@@ -204,7 +203,7 @@ const procesarCompra = async () => {
   font-weight: bold;
 }
 .checkout-btn {
-  background: #ff0000;
+  background: var(--accent);
   color: white;
   border: none;
   padding: 12px;
@@ -215,10 +214,11 @@ const procesarCompra = async () => {
   transition: 0.2s;
 }
 .checkout-btn:hover:not(:disabled) {
-  background: #cc0000;
+  background: var(--accent-hover);
 }
 .checkout-btn:disabled {
-  background: #444;
+  background: var(--border);
+  color: var(--text-muted);
   cursor: not-allowed;
 }
 </style>

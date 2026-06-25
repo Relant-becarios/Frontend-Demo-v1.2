@@ -1,0 +1,164 @@
+<template>
+  <div v-if="uiStore.isAuthModalOpen" class="modal-detalles" @click.self="uiStore.closeAll">
+    <div class="auth-content">
+      <div class="auth-header">
+        <h2 class="auth-title">{{ esRegistro ? 'Crear Cuenta' : 'Iniciar Sesión' }}</h2>
+        <span @click="uiStore.closeAll" class="close-icon">✕</span>
+      </div>
+
+      <form @submit.prevent="procesarFormulario" class="auth-form">
+        <div class="input-group">
+          <label>Correo Electrónico</label>
+          <input type="email" v-model="email" required placeholder="tu@correo.com" />
+        </div>
+        <div class="input-group">
+          <label>Contraseña</label>
+          <input type="password" v-model="password" required placeholder="••••••••" minlength="6" />
+        </div>
+
+        <p v-if="errorMsg" class="error-msg">{{ errorMsg }}</p>
+
+        <button type="submit" class="btn-auth" :disabled="procesando">
+          {{ procesando ? 'Procesando...' : esRegistro ? 'REGISTRARSE' : 'INGRESAR' }}
+        </button>
+      </form>
+
+      <div class="auth-toggle">
+        <span v-if="!esRegistro"
+          >¿No tienes cuenta? <a @click="esRegistro = true">Regístrate aquí</a></span
+        >
+        <span v-else>¿Ya tienes cuenta? <a @click="esRegistro = false">Inicia sesión</a></span>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+import { useUiStore } from '@/stores/ui'
+import { useAuthStore } from '@/stores/auth'
+
+const uiStore = useUiStore()
+const authStore = useAuthStore()
+
+const email = ref('')
+const password = ref('')
+const esRegistro = ref(false)
+const procesando = ref(false)
+const errorMsg = ref('')
+
+const procesarFormulario = async () => {
+  procesando.value = true
+  errorMsg.value = ''
+  try {
+    if (esRegistro.value) {
+      await authStore.registrarse(email.value, password.value)
+    } else {
+      await authStore.iniciarSesion(email.value, password.value)
+    }
+    uiStore.closeAll() // Cerramos al tener éxito
+    email.value = ''
+    password.value = ''
+  } catch (error: unknown) {
+    console.error(error)
+    errorMsg.value =
+      'Error: Verifica tus credenciales (la contraseña debe tener al menos 6 caracteres).'
+  } finally {
+    procesando.value = false
+  }
+}
+</script>
+
+<style scoped>
+.modal-detalles {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 9500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.auth-content {
+  background: #161b22;
+  width: 100%;
+  max-width: 400px;
+  padding: 30px;
+  border-radius: 12px;
+  border: 1px solid #30363d;
+  color: white;
+  box-sizing: border-box;
+}
+.auth-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+.auth-title {
+  color: #ff0000;
+  margin: 0;
+}
+.close-icon {
+  cursor: pointer;
+  font-size: 20px;
+}
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.input-group label {
+  font-size: 12px;
+  color: #8b949e;
+  margin-bottom: 5px;
+  display: block;
+}
+.input-group input {
+  width: 100%;
+  padding: 12px;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  color: white;
+  outline: none;
+  box-sizing: border-box;
+}
+.btn-auth {
+  background: #ff0000;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.2s;
+  margin-top: 10px;
+}
+.btn-auth:hover:not(:disabled) {
+  background: #cc0000;
+}
+.btn-auth:disabled {
+  background: #444;
+  cursor: not-allowed;
+}
+.error-msg {
+  color: #ff4444;
+  font-size: 13px;
+  text-align: center;
+}
+.auth-toggle {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 13px;
+  color: #8b949e;
+}
+.auth-toggle a {
+  color: #ff0000;
+  cursor: pointer;
+  text-decoration: underline;
+}
+</style>

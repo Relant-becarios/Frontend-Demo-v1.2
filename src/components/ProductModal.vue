@@ -13,7 +13,9 @@
         />
         <div class="modal-info">
           <h3>{{ producto.Producto }}</h3>
-          <p class="desc-text">{{ producto.Descripcion || 'Sin descripción detallada.' }}</p>
+          <p class="desc-text">
+            {{ (producto as any).Descripcion || 'Sin descripción detallada.' }}
+          </p>
 
           <div class="specs">
             <p><strong>Categoría:</strong> {{ producto.Categoria || 'N/A' }}</p>
@@ -49,18 +51,9 @@ const router = useRouter()
 
 const producto = computed(() => marketStore.selectedProduct)
 
-// Lógica para detectar si es un equipo prefabicado (Válvula, Bomba, etc)
+// CORRECCIÓN SINTAXIS: Limpio, seguro y configurado para salir en todos los productos
 const mostrarBtnRefacciones = computed(() => {
-  if (!producto.value) return false
-  const nombre = (producto.value.Producto || '').toLowerCase()
-  const categoria = (producto.value.Categoria || '').toLowerCase()
-  return (
-    nombre.includes('valvula') ||
-    nombre.includes('válvula') ||
-    nombre.includes('bomba') ||
-    categoria.includes('valvula') ||
-    categoria.includes('bomba')
-  )
+  return true
 })
 
 const añadirAlCarrito = () => {
@@ -74,7 +67,7 @@ const añadirAlCarrito = () => {
 
 const irARefacciones = () => {
   if (producto.value) {
-    const id = producto.value.id || producto.value.ID
+    const id = producto.value.id || producto.value.ID || producto.value.Producto
     marketStore.closeModal()
     router.push(`/refacciones/${id}`)
   }

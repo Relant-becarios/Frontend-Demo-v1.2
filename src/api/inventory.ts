@@ -1,5 +1,24 @@
 const API_URL = 'https://relantmarketplace-default-rtdb.firebaseio.com'
 
+// Definición de las interfaces para que TypeScript reconozca la estructura de refacciones
+export interface Pieza {
+  id_refaccion?: string
+  nombre_refaccion?: string
+  nombre?: string
+  sku: string
+  stock?: number
+  imagen_url?: string
+  img?: string
+}
+
+export interface Kit {
+  id?: string | number
+  nombre_kit?: string
+  nombre?: string
+  refacciones?: Pieza[]
+  piezas?: Pieza[]
+}
+
 export interface Producto {
   id?: string
   ID?: string
@@ -8,6 +27,11 @@ export interface Producto {
   Categoria?: string
   Imagen_URL?: string
   imagen?: string
+  // NUEVOS CAMPOS: Dejamos la puerta abierta en el molde para recibir planos desde la Base de Datos
+  Imagen_Explosionada_URL?: string
+  imagen_explosionada?: string
+  Kits?: Kit[]
+  kits?: Kit[]
   [key: string]: unknown
 }
 
@@ -27,11 +51,12 @@ export const fetchProductos = async (query = '', categoria = 'Todas'): Promise<P
         // 2. PETICIÓN REAL A SPRING BOOT (Para cuando esté listo el backend)
         // Cuando me pasen el backend, BORRAR el fetch de arriba y DESCOMENTAR esto:
         // -----------------------------------------------------------------
+        const token = await obtenerTokenJWT();
         const url = `http://localhost:8080/api/productos?search=${query}&categoria=${categoria}`;
         const response = await fetch(url, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        */
+    */
 
     if (!response.ok) throw new Error('Error de red al obtener productos')
 
@@ -68,13 +93,31 @@ export const procesarOrdenDeCompra = async (carritoPayload: { id: string; cantid
   const token = await obtenerTokenJWT()
   console.log('Enviando petición a Spring Boot con JWT y este Payload:', token, carritoPayload)
 
+  // --- ARREGLO: CÁLCULO DINÁMICO DEL TOTAL ---
+  // Obtenemos la lista de productos real para buscar sus costos
+  const productosBaseDeDatos = await fetchProductos()
+  let totalCalculado = 0
+
+  carritoPayload.forEach((itemCarrito) => {
+    // Buscamos el producto en la lista por su ID o Nombre para extraer su precio real
+    const productoDb = productosBaseDeDatos.find(
+      (p) => String(p.id || p.ID) === itemCarrito.id || p.Producto === itemCarrito.id,
+    )
+
+    if (productoDb && productoDb.Precio) {
+      // Limpiamos y convertimos el precio a número por si viene como texto
+      const precioNumerico = parseFloat(String(productoDb.Precio)) || 0
+      totalCalculado += precioNumerico * itemCarrito.cantidad
+    }
+  })
+
   return new Promise((resolve) => {
     setTimeout(
       () =>
         resolve({
           success: true,
-          mensaje: 'Orden procesada correctamente.',
-          totalCalculadoEnBackend: 256.0,
+          mensaje: 'Orden procesada y cotización enviada correctamente.',
+          totalCalculadoEnBackend: totalCalculado, // Enviamos la suma matemática real
         }),
       1500,
     )

@@ -10,13 +10,16 @@
 
       <div v-else v-for="item in cartDetails" :key="item.id" class="cart-item">
         <img
-          :src="item.Imagen_URL || 'https://via.placeholder.com/150'"
+          :src="item.Imagen_URL || item.imagen || 'https://via.placeholder.com/150'"
           width="50"
           height="50"
           class="item-img"
         />
         <div class="item-info">
           <b>{{ item.Producto }}</b
+          ><br />
+          <span style="color: var(--accent); font-weight: bold">
+            ${{ formatPrecio(item.Precio) }} USD </span
           ><br />
           Cant:
           <input
@@ -32,10 +35,17 @@
     </div>
 
     <div class="cart-footer">
-      <p class="security-note">🔒 El cálculo total se realizará de forma segura en el servidor.</p>
+      <div class="cart-total-display" v-if="cartStore.items.length > 0">
+        <span>Total Estimado:</span>
+        <span style="color: var(--accent); font-size: 18px"
+          >${{ formatPrecio(totalEstimado) }} USD</span
+        >
+      </div>
+
+      <p class="security-note">🔒 El cálculo oficial se validará en el servidor.</p>
 
       <p v-if="!authStore.usuarioActual && cartStore.items.length > 0" class="login-warning">
-        Debes iniciar sesión para comprar.
+        Debes iniciar sesión para procesar la orden.
       </p>
 
       <button
@@ -43,7 +53,7 @@
         class="checkout-btn"
         :disabled="cartStore.items.length === 0 || procesando || !authStore.usuarioActual"
       >
-        {{ procesando ? 'Procesando...' : 'PROCESAR COMPRA' }}
+        {{ procesando ? 'Procesando...' : 'PROCESAR ORDEN' }}
       </button>
     </div>
   </div>
@@ -66,18 +76,36 @@ onMounted(async () => {
   todosLosProductos.value = await fetchProductos()
 })
 
+// Mapea los detalles y se trae el precio de la base de datos
 const cartDetails = computed(() => {
   return cartStore.items.map((cartItem) => {
     const productDetail = todosLosProductos.value.find(
-      (p) => p.id === cartItem.id || p.ID === cartItem.id,
+      (p) => String(p.id || p.ID) === cartItem.id || p.Producto === cartItem.id,
     )
     return {
       ...cartItem,
-      Producto: productDetail?.Producto || 'Cargando...',
+      Producto: productDetail?.Producto || cartItem.id,
       Imagen_URL: productDetail?.Imagen_URL || productDetail?.imagen || '',
+      imagen: productDetail?.imagen || '',
+      Precio: productDetail?.Precio || 0,
     }
   })
 })
+
+// Calcula la suma total reactiva del carrito
+const totalEstimado = computed(() => {
+  return cartDetails.value.reduce((total, item) => {
+    const precio = parseFloat(String(item.Precio)) || 0
+    return total + precio * item.cant
+  }, 0)
+})
+
+const formatPrecio = (precio: number | string | undefined) => {
+  return parseFloat(String(precio || 0)).toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+}
 
 const actualizarCant = (id: string, event: Event) => {
   const target = event.target as HTMLInputElement
@@ -88,14 +116,17 @@ const procesarCompra = async () => {
   procesando.value = true
   try {
     const payload = cartStore.items.map((item) => ({ id: item.id, cantidad: item.cant }))
+
+    // Llamada al backend
     interface RespuestaBackend {
       success: boolean
       mensaje: string
       totalCalculadoEnBackend: number
     }
     const respuesta = (await procesarOrdenDeCompra(payload)) as RespuestaBackend
+
     alert(
-      `${respuesta.mensaje}\nTotal calculado por el backend: $${respuesta.totalCalculadoEnBackend} USD`,
+      `${respuesta.mensaje}\nTotal a pagar: $${formatPrecio(respuesta.totalCalculadoEnBackend)} USD`,
     )
     cartStore.vaciarCarrito()
     uiStore.closeAll()
@@ -145,6 +176,7 @@ const procesarCompra = async () => {
 .cart-items-container {
   flex: 1;
   overflow-y: auto;
+  padding-right: 5px;
 }
 .empty-cart {
   text-align: center;
@@ -154,29 +186,32 @@ const procesarCompra = async () => {
 .cart-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 15px;
   margin-bottom: 15px;
   border-bottom: 1px solid var(--border);
-  padding-bottom: 10px;
+  padding-bottom: 15px;
 }
 .item-img {
   object-fit: contain;
   background: white;
   border-radius: 4px;
+  padding: 2px;
 }
 .item-info {
   flex: 1;
-  font-size: 12px;
+  font-size: 13px;
+  line-height: 1.4;
 }
 .cart-qty-input {
-  width: 55px;
-  padding: 5px;
+  width: 50px;
+  padding: 4px;
   border: 1px solid var(--border);
   background: var(--bg-input);
   color: var(--text-main);
   border-radius: 4px;
   text-align: center;
   margin-top: 5px;
+  font-weight: bold;
 }
 .remove-btn {
   background: none;
@@ -184,10 +219,20 @@ const procesarCompra = async () => {
   color: var(--accent);
   cursor: pointer;
   font-weight: bold;
+  font-size: 16px;
+  padding: 5px;
 }
 .cart-footer {
   padding-top: 15px;
   border-top: 1px solid var(--border);
+}
+.cart-total-display {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+  margin-bottom: 15px;
+  font-size: 16px;
 }
 .security-note {
   font-size: 11px;
@@ -206,19 +251,23 @@ const procesarCompra = async () => {
   background: var(--accent);
   color: white;
   border: none;
-  padding: 12px;
+  padding: 14px;
   width: 100%;
   border-radius: 8px;
   cursor: pointer;
   font-weight: bold;
   transition: 0.2s;
+  font-size: 14px;
+  letter-spacing: 1px;
 }
 .checkout-btn:hover:not(:disabled) {
   background: var(--accent-hover);
+  box-shadow: 0 4px 12px rgba(255, 0, 0, 0.3);
 }
 .checkout-btn:disabled {
   background: var(--border);
   color: var(--text-muted);
   cursor: not-allowed;
+  box-shadow: none;
 }
 </style>

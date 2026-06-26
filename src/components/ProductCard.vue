@@ -5,9 +5,8 @@
       :alt="producto.Producto"
     />
     <h3 class="card-title">{{ producto.Producto }}</h3>
-    <div class="card-price">${{ formatPrecio(producto.Precio) }} USD</div>
 
-    <button class="btn-add" @click.stop="añadirAlCarrito">AÑADIR</button>
+    <button class="btn-add" @click.stop="añadirAlCarrito">AÑADIR AL CARRITO</button>
   </div>
 </template>
 
@@ -22,10 +21,6 @@ const props = defineProps<{
 
 const cartStore = useCartStore()
 const marketStore = useMarketStore()
-
-const formatPrecio = (precio: number | string | undefined) => {
-  return parseFloat(String(precio || 0)).toLocaleString('en-US', { minimumFractionDigits: 2 })
-}
 
 const añadirAlCarrito = () => {
   const idParaCarrito = props.producto.id || props.producto.ID || props.producto.Producto
@@ -44,13 +39,16 @@ const añadirAlCarrito = () => {
   transition: 0.3s;
   cursor: pointer;
   color: var(--text-main);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  box-sizing: border-box;
 }
-
 .card:hover {
   transform: translateY(-5px);
   box-shadow: 0 5px 15px rgba(255, 0, 0, 0.2);
 }
-
 .card img {
   width: 100%;
   height: 160px;
@@ -59,20 +57,15 @@ const añadirAlCarrito = () => {
   border-radius: 5px;
   margin-bottom: 10px;
 }
-
 .card-title {
   font-size: 14px;
   margin: 10px 0;
-  height: 35px;
+  height: 40px;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-
-.card-price {
-  color: var(--accent);
-  font-weight: bold;
-  font-size: 18px;
-}
-
 .btn-add {
   background: var(--accent);
   color: white;
@@ -85,7 +78,6 @@ const añadirAlCarrito = () => {
   font-weight: bold;
   transition: 0.2s;
 }
-
 .btn-add:hover {
   background: var(--accent-hover);
 }

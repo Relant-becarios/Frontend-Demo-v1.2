@@ -21,6 +21,12 @@ const router = createRouter({
       name: 'calculadora',
       component: CalculadoraView,
     },
+    {
+      // NUEVA RUTA DE REFACCIONES
+      path: '/refacciones/:id',
+      name: 'refacciones',
+      component: () => import('../views/RefaccionesView.vue'),
+    },
   ],
 })
 

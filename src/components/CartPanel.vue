@@ -10,7 +10,7 @@
 
       <div v-else v-for="item in cartDetails" :key="item.id" class="cart-item">
         <img
-          :src="item.Imagen_URL || item.imagen || 'https://via.placeholder.com/150'"
+          :src="item.Imagen_URL || 'https://via.placeholder.com/150'"
           width="50"
           height="50"
           class="item-img"
@@ -79,14 +79,22 @@ onMounted(async () => {
 // Mapea los detalles y se trae el precio de la base de datos
 const cartDetails = computed(() => {
   return cartStore.items.map((cartItem) => {
+    // CORRECCIÓN: Forzamos el ID del carrito a ser texto para que no falle la comparación
+    const idBuscado = String(cartItem.id)
+
     const productDetail = todosLosProductos.value.find(
-      (p) => String(p.id || p.ID) === cartItem.id || p.Producto === cartItem.id,
+      (p) =>
+        String(p.id) === idBuscado ||
+        String(p.ID) === idBuscado ||
+        String(p.Producto) === idBuscado,
     )
+
     return {
       ...cartItem,
-      Producto: productDetail?.Producto || cartItem.id,
-      Imagen_URL: productDetail?.Imagen_URL || productDetail?.imagen || '',
-      imagen: productDetail?.imagen || '',
+      Producto: productDetail?.Producto || `Producto no encontrado (${idBuscado})`,
+      // CORRECCIÓN: Agregamos el placeholder directo aquí para evitar la imagen rota
+      Imagen_URL:
+        productDetail?.Imagen_URL || productDetail?.imagen || 'https://via.placeholder.com/150',
       Precio: productDetail?.Precio || 0,
     }
   })

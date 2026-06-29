@@ -1,5 +1,3 @@
-const API_URL = 'https://relantmarketplace-default-rtdb.firebaseio.com'
-
 // Definición de las interfaces para que TypeScript reconozca la estructura de refacciones
 export interface Pieza {
   id_refaccion?: string
@@ -43,46 +41,47 @@ const obtenerTokenJWT = async (): Promise<string | null> => {
 
 export const fetchProductos = async (query = '', categoria = 'Todas'): Promise<Producto[]> => {
   try {
-    // 1. PETICIÓN TEMPORAL A FIREBASE (Sin Token para evitar el Error 401)
-    const response = await fetch(`${API_URL}/productos.json`)
-
-    /*
-        // -----------------------------------------------------------------
-        // 2. PETICIÓN REAL A SPRING BOOT (Para cuando esté listo el backend)
-        // Cuando me pasen el backend, BORRAR el fetch de arriba y DESCOMENTAR esto:
-        // -----------------------------------------------------------------
-        const token = await obtenerTokenJWT();
-        const url = `http://localhost:8080/api/productos?search=${query}&categoria=${categoria}`;
-        const response = await fetch(url, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-    */
+    const url = `http://localhost:8080/api/productos`
+    const response = await fetch(url)
 
     if (!response.ok) throw new Error('Error de red al obtener productos')
 
     const data = await response.json()
-    let productosLimpios = data
-      ? (Object.values(data).filter((item) => item !== null && item !== undefined) as Producto[])
-      : []
 
-    // --- INICIO DE SIMULACIÓN DE FILTRADO (Se borrará cuando uses Spring Boot) ---
+    // Mapeamos los campos del backend (Material) al modelo del frontend (Producto)
+    let productosLimpios = data.map((item: any) => ({
+      id: item.codigo,
+      Producto: item.descripcion,
+      Precio: 0.0,
+      Categoria: item.ubicacion || 'General',
+      Imagen_URL:
+        'https://via.placeholder.com/150/ffffff/000000?text=' +
+        encodeURIComponent(item.skuAlterno || item.codigo),
+      sku: item.skuAlterno || item.codigo,
+      cantidad: item.cantidad,
+      minStock: item.minStock,
+      ...item,
+    }))
+
     if (categoria !== 'Todas') {
-      productosLimpios = productosLimpios.filter((p) => p.Categoria === categoria)
+      productosLimpios = productosLimpios.filter((p: any) => p.Categoria === categoria)
     }
     if (query.trim() !== '') {
       const busqueda = query.toLowerCase().trim()
       productosLimpios = productosLimpios.filter(
-        (p) =>
+        (p: any) =>
           String(p.Producto || '')
             .toLowerCase()
             .includes(busqueda) ||
-          String(p.id || p.ID || '')
+          String(p.id || '')
+            .toLowerCase()
+            .includes(busqueda) ||
+          String(p.sku || '')
             .toLowerCase()
             .includes(busqueda),
       )
     }
     return productosLimpios
-    // --- FIN DE SIMULACIÓN ---
   } catch (error) {
     console.error('Error en fetchProductos:', error)
     return []

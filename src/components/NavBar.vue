@@ -1,6 +1,8 @@
 <template>
   <nav class="navbar">
-    <div class="logo-nav">RELANT</div>
+    <router-link to="/" @click="limpiarInicio" style="text-decoration: none">
+      <h1 class="logo-nav">RELANT</h1>
+    </router-link>
 
     <div class="search-container">
       <div class="dropdown">
@@ -80,6 +82,13 @@ const ejecutarBusqueda = () => {
   showCats.value = false
   emit('buscar')
 }
+
+// 3. Función que hace el "Borrón y cuenta nueva"
+const limpiarInicio = () => {
+  marketStore.searchQuery = ''
+  marketStore.selectedCategory = 'Todas'
+  emit('buscar')
+}
 </script>
 
 <style scoped>
@@ -101,6 +110,7 @@ const ejecutarBusqueda = () => {
   cursor: pointer;
   letter-spacing: 2px;
   text-transform: uppercase;
+  margin: 0; /* Quita márgenes por defecto del h1 para que no se mueva la barra */
 }
 .search-container {
   display: flex;

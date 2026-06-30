@@ -51,7 +51,7 @@ const obtenerTokenJWT = async (): Promise<string | null> => {
 
 export const fetchProductos = async (query = '', categoria = 'Todas'): Promise<Producto[]> => {
   try {
-    const url = `http://localhost:8080/api/productos`
+    const url = `https://prueba-de-backend-en-frontend.onrender.com/`
     const response = await fetch(url)
 
     if (!response.ok) throw new Error('Error de red al obtener productos')

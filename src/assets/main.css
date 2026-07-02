@@ -5,6 +5,14 @@
   --color-acento: #ff0000;
   --borde: #30363d;
 }
+:root[data-theme='light'],
+body.light-mode {
+  --fondo-principal: #ffffff;
+  --fondo-tarjeta: #f8f9fa;
+  --color-texto: #1a1a1a; /* Texto e íconos oscuros */
+  --color-acento: #ff0000;
+  --borde: #e5e7eb;
+}
 body {
   background: var(--fondo-principal);
   color: var(--color-texto);

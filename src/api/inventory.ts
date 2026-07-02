@@ -56,7 +56,8 @@ export const fetchProductos = async (query = '', categoria = 'Todas'): Promise<P
 
     if (!response.ok) throw new Error('Error de red al obtener productos')
 
-    const data: ProductoBackend[] = await response.json()
+    const responseData = await response.json()
+    const data: ProductoBackend[] = responseData.content || []
 
     // Mapeamos los campos del backend (Material) al modelo del frontend (Producto)
     let productosLimpios: Producto[] = data.map((item: ProductoBackend) => ({

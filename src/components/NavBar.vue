@@ -35,7 +35,7 @@
 
       <div
         @click="uiStore.toggleChat"
-        style="cursor: pointer; font-size: 14px; font-weight: 900; color: white"
+        style="cursor: pointer; font-size: 14px; font-weight: 900; color: var(--color-texto)"
         title="Asistente AI"
       >
         ✨ AI
@@ -45,7 +45,7 @@
         <img
           src="https://cdn-icons-png.flaticon.com/512/1170/1170678.png"
           width="28"
-          style="filter: invert(1)"
+          class="img-carrito"
         />
         <span class="cart-badge">{{ cartStore.totalItems }}</span>
       </div>
@@ -110,7 +110,7 @@ const limpiarInicio = () => {
   cursor: pointer;
   letter-spacing: 2px;
   text-transform: uppercase;
-  margin: 0; /* Quita márgenes por defecto del h1 para que no se mueva la barra */
+  margin: 0;
 }
 .search-container {
   display: flex;
@@ -128,7 +128,7 @@ const limpiarInicio = () => {
 }
 .btn-cat {
   background: #ff0000;
-  color: white;
+  color: white; /* Este se queda en blanco porque el fondo es rojo */
   border: none;
   padding: 10px 20px;
   font-weight: bold;
@@ -146,7 +146,7 @@ const limpiarInicio = () => {
   flex-grow: 1;
   border: none;
   background: transparent;
-  color: #ffffff;
+  color: var(--color-texto); /* Corrección */
   padding: 12px 15px;
   outline: none;
   font-size: 14px;
@@ -172,7 +172,7 @@ const limpiarInicio = () => {
   display: block;
 }
 .dropdown-content a {
-  color: #fff;
+  color: var(--color-texto); /* Corrección */
   padding: 12px 16px;
   text-decoration: none;
   display: block;
@@ -182,6 +182,7 @@ const limpiarInicio = () => {
 }
 .dropdown-content a:hover {
   background: #ff0000;
+  color: white;
 }
 .nav-actions {
   display: flex;
@@ -192,6 +193,17 @@ const limpiarInicio = () => {
   position: relative;
   cursor: pointer;
 }
+/* CORRECCIÓN DE LA IMAGEN DEL CARRITO */
+.img-carrito {
+  filter: invert(1); /* Blanco por defecto en modo oscuro */
+}
+/* Si el body tiene clase de tema claro, se le quita el filtro y vuelve a ser negra */
+:global(body.light-mode .img-carrito),
+:global(body[data-theme='light'] .img-carrito),
+:global(body.light .img-carrito) {
+  filter: invert(0) !important;
+}
+
 .cart-badge {
   position: absolute;
   top: -8px;
@@ -220,7 +232,7 @@ const limpiarInicio = () => {
   display: block;
   width: 100%;
   height: 3px;
-  background: #ffffff;
+  background: var(--color-texto); /* Corrección */
   border-radius: 2px;
   transition: 0.3s;
 }
@@ -230,7 +242,7 @@ const limpiarInicio = () => {
   cursor: pointer;
   font-size: 14px;
   font-weight: bold;
-  color: white;
+  color: var(--color-texto); /* Corrección */
   background: #30363d;
   padding: 6px 12px;
   border-radius: 20px;
@@ -238,6 +250,7 @@ const limpiarInicio = () => {
 }
 .login-trigger:hover {
   background: #ff0000;
+  color: white;
 }
 .user-menu {
   display: flex;

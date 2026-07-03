@@ -196,10 +196,12 @@ const limpiarInicio = () => {
 /* CORRECCIÓN DE LA IMAGEN DEL CARRITO */
 .img-carrito {
   filter: invert(1); /* Blanco por defecto en modo oscuro */
+  transition: filter 0.25s ease;
 }
-/* Si el body tiene clase de tema claro, se le quita el filtro y vuelve a ser negra */
+/* Si el html tiene data-theme='light' o :root[data-theme='light'], se quita el filtro */
+:global(html[data-theme='light'] .img-carrito),
+:global(:root[data-theme='light'] .img-carrito),
 :global(body.light-mode .img-carrito),
-:global(body[data-theme='light'] .img-carrito),
 :global(body.light .img-carrito) {
   filter: invert(0) !important;
 }
@@ -227,6 +229,8 @@ const limpiarInicio = () => {
   justify-content: space-between;
   cursor: pointer;
   margin-left: 15px;
+  z-index: 3000; /* Aseguramos que quede por encima */
+  visibility: visible !important;
 }
 .icon-hamburguesa span {
   display: block;

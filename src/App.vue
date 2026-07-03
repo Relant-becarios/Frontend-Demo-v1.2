@@ -76,6 +76,6 @@ body {
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.8);
-  z-index: 7500;
+  z-index: 20000; /* keep below the menu-panel */
 }
 </style>

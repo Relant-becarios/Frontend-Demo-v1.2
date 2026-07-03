@@ -31,10 +31,10 @@ const navegarA = (ruta: string) => {
   background: var(--bg-panel);
   z-index: 10000;
   transition: 0.4s ease;
-  border-left: 2px solid #ff0000;
+  border-left: 2px solid var(--accent);
   padding: 25px;
   box-sizing: border-box;
-  color: #fff;
+  color: var(--text-main); /* usar variable para que cambie con el tema */
 }
 .menu-panel.open {
   right: 0;
@@ -46,7 +46,7 @@ const navegarA = (ruta: string) => {
   margin-bottom: 10px;
 }
 .menu-title {
-  color: #ff0000;
+  color: var(--accent); /* usar variable de acento */
   margin-bottom: 25px;
   letter-spacing: 2px;
   font-weight: bold;
@@ -56,17 +56,17 @@ const navegarA = (ruta: string) => {
   align-items: center;
   gap: 15px;
   padding: 18px 10px;
-  color: #ffffff;
+  color: var(--text-main); /* usar variable para respetar tema */
   text-decoration: none;
   font-size: 17px;
   font-weight: bold;
-  border-bottom: 1px solid #30363d;
+  border-bottom: 1px solid var(--border);
   cursor: pointer;
   transition: 0.3s;
 }
 .menu-link:hover {
   background: rgba(255, 0, 0, 0.1);
-  color: #ff0000;
+  color: var(--accent);
   padding-left: 20px;
 }
 </style>

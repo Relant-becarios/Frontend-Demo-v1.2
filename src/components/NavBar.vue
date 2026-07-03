@@ -35,23 +35,22 @@
 
       <div
         @click="uiStore.toggleChat"
-        class="ai-trigger"
+        style="cursor: pointer; font-size: 14px; font-weight: 900; color: var(--color-texto)"
         title="Asistente AI"
       >
         ✨ AI
       </div>
 
-      <div class="cart-icon" @click="uiStore.toggleCart" aria-label="Abrir carrito" role="button">
-        <!-- Outline-only SVG for the cart: stroke=currentColor, no fill -->
-        <svg class="img-carrito-svg" width="28" height="28" viewBox="0 0 24 24" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M6 6h15l-1.5 9h-11z" />
-          <circle cx="9" cy="20" r="1" />
-          <circle cx="18" cy="20" r="1" />
-        </svg>
-        <span class="cart-badge" aria-live="polite">{{ cartStore.totalItems }}</span>
+      <div class="cart-icon" @click="uiStore.toggleCart">
+        <img
+          src="https://cdn-icons-png.flaticon.com/512/1170/1170678.png"
+          width="28"
+          class="img-carrito"
+        />
+        <span class="cart-badge">{{ cartStore.totalItems }}</span>
       </div>
 
-      <div class="icon-hamburguesa" @click="uiStore.toggleMenu" aria-label="Abrir menú" role="button">
+      <div class="icon-hamburguesa" @click="uiStore.toggleMenu">
         <span></span><span></span><span></span>
       </div>
     </div>
@@ -93,51 +92,43 @@ const limpiarInicio = () => {
 </script>
 
 <style scoped>
-/* Local theme-aware variables with fallbacks */
-:root {
-  --comp-accent: var(--accent, #ff0000);
-  --comp-bg-panel: var(--bg-panel, #161b22);
-  --comp-text: var(--text-main, #ffffff);
-  --comp-border: var(--border, #30363d);
-}
-
 .navbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 10px 5%;
-  background: var(--comp-bg-panel);
-  border-bottom: 1px solid var(--comp-border);
+  background: var(--bg-panel);
+  border-bottom: 1px solid #30363d;
   position: sticky;
   top: 0;
-  z-index: 16000;
-  color: var(--comp-text);
+  z-index: 2000;
 }
 .logo-nav {
   font-size: 26px;
   font-weight: 900;
-  color: var(--comp-accent) !important; /* Force RELANT to red per request */
+  color: #ff0000;
   cursor: pointer;
   letter-spacing: 2px;
   text-transform: uppercase;
   margin: 0;
 }
-
 .search-container {
   display: flex;
   flex-grow: 1;
   max-width: 550px;
   margin: 0 20px;
-  background: var(--bg-input, #0d1117);
-  border: 1px solid var(--comp-border);
+  background: var(--bg-input);
+  border: 1px solid #30363d;
   border-radius: 25px;
   position: relative;
   align-items: center;
 }
-
+.dropdown {
+  position: relative;
+}
 .btn-cat {
-  background: var(--comp-accent);
-  color: white;
+  background: #ff0000;
+  color: white; /* Este se queda en blanco porque el fondo es rojo */
   border: none;
   padding: 10px 20px;
   font-weight: bold;
@@ -151,36 +142,133 @@ const limpiarInicio = () => {
   align-items: center;
   justify-content: space-between;
 }
-
 .search-input {
   flex-grow: 1;
   border: none;
   background: transparent;
-  color: var(--comp-text);
+  color: var(--color-texto); /* Corrección */
   padding: 12px 15px;
   outline: none;
   font-size: 14px;
   width: 100%;
   border-radius: 0 25px 25px 0;
 }
-
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background: var(--bg-panel);
+  min-width: 220px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+  z-index: 3000;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  top: 100%;
+  left: 0;
+  margin-top: 5px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+.dropdown-content.show {
+  display: block;
+}
+.dropdown-content a {
+  color: var(--color-texto); /* Corrección */
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+  cursor: pointer;
+  font-size: 14px;
+  border-bottom: 1px solid #30363d;
+}
+.dropdown-content a:hover {
+  background: #ff0000;
+  color: white;
+}
 .nav-actions {
   display: flex;
   align-items: center;
   gap: 20px;
+}
+.cart-icon {
   position: relative;
-  z-index: 16001;
+  cursor: pointer;
+}
+/* CORRECCIÓN DE LA IMAGEN DEL CARRITO */
+.img-carrito {
+  filter: invert(1); /* Blanco por defecto en modo oscuro */
+}
+/* Si el body tiene clase de tema claro, se le quita el filtro y vuelve a ser negra */
+:global(body.light-mode .img-carrito),
+:global(body[data-theme='light'] .img-carrito),
+:global(body.light .img-carrito) {
+  filter: invert(0) !important;
 }
 
-.cart-icon { position: relative; cursor: pointer; z-index: 16001; display: inline-flex; align-items: center; gap: 6px; }
-.img-carrito-svg { color: var(--comp-text); width: 28px; height: 28px; display: inline-block; vertical-align: middle; }
-.cart-badge { position: absolute; top: -8px; right: -8px; background: var(--comp-accent); color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+.cart-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: red;
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+.icon-hamburguesa {
+  width: 30px;
+  height: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  margin-left: 15px;
+}
+.icon-hamburguesa span {
+  display: block;
+  width: 100%;
+  height: 3px;
+  background: var(--color-texto); /* Corrección */
+  border-radius: 2px;
+  transition: 0.3s;
+}
 
-.icon-hamburguesa { width: 34px; height: 24px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; margin-left: 15px; z-index: 16002; visibility: visible !important; }
-.icon-hamburguesa span { display: block; width: 100%; height: 3px; background: var(--comp-text); border-radius: 2px; transition: 0.3s; }
-
-.login-trigger { cursor: pointer; font-size: 14px; font-weight: bold; color: var(--comp-text); background: #30363d; padding: 6px 12px; border-radius: 20px; transition: 0.2s; }
-.login-trigger:hover { background: var(--comp-accent); color: white; }
-.user-email { font-size: 13px; color: #8b949e; font-weight: bold; }
-.btn-logout { background: transparent; color: #ff4444; border: 1px solid #ff4444; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 11px; }
+/* Estilos Autenticación */
+.login-trigger {
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--color-texto); /* Corrección */
+  background: #30363d;
+  padding: 6px 12px;
+  border-radius: 20px;
+  transition: 0.2s;
+}
+.login-trigger:hover {
+  background: #ff0000;
+  color: white;
+}
+.user-menu {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.user-email {
+  font-size: 13px;
+  color: #8b949e;
+  font-weight: bold;
+}
+.btn-logout {
+  background: transparent;
+  color: #ff4444;
+  border: 1px solid #ff4444;
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 11px;
+}
 </style>

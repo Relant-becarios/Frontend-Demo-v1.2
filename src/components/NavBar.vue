@@ -101,7 +101,7 @@ const limpiarInicio = () => {
   border-bottom: 1px solid #30363d;
   position: sticky;
   top: 0;
-  z-index: 2000;
+  z-index: 16000; /* Elevated so navbar controls remain above the overlay */
 }
 .logo-nav {
   font-size: 26px;
@@ -192,6 +192,7 @@ const limpiarInicio = () => {
 .cart-icon {
   position: relative;
   cursor: pointer;
+  z-index: 16001; /* keep above overlay */
 }
 /* CORRECCIÓN DE LA IMAGEN DEL CARRITO */
 .img-carrito {
@@ -229,7 +230,7 @@ const limpiarInicio = () => {
   justify-content: space-between;
   cursor: pointer;
   margin-left: 15px;
-  z-index: 3000; /* Aseguramos que quede por encima */
+  z-index: 16001; /* ensure visible above overlay */
   visibility: visible !important;
 }
 .icon-hamburguesa span {

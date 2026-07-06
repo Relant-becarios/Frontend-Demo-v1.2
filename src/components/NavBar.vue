@@ -227,12 +227,16 @@ const limpiarInicio = () => {
   justify-content: space-between;
   cursor: pointer;
   margin-left: 15px;
+  /* 1. Le decimos explícitamente que su color base es nuestra variable (con blanco de salvavidas) */
+  color: var(--color-texto, #ffffff);
 }
+
 .icon-hamburguesa span {
   display: block;
   width: 100%;
   height: 3px;
-  background: var(--color-texto); /* Corrección */
+  /* 2. currentColor copia automáticamente el color que definimos arriba */
+  background-color: currentColor;
   border-radius: 2px;
   transition: 0.3s;
 }

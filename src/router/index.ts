@@ -12,6 +12,11 @@ const router = createRouter({
       component: HomeView,
     },
     {
+      path: '/catalogo',
+      name: 'catalogo',
+      component: () => import('../views/CatalogoView.vue'),
+    },
+    {
       path: '/stl',
       name: 'stl',
       component: StlView,

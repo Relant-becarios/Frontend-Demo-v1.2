@@ -7,7 +7,6 @@
   --borde: #30363d;
 }
 
-/* ── Tema Claro (Se activa con tu botón) ── */
 :root[data-theme='light'],
 body.light-mode,
 body.light,

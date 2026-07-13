@@ -1,0 +1,39 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String    @id @default(uuid())
+  email      String    @unique
+  nombre     String?
+  rol        String    @default("CLIENTE") 
+  
+  licenciaId String?
+  licencia   Licencia? @relation(fields: [licenciaId], references: [id])
+}
+
+model Maquina {
+  id             String    @id @default(uuid())
+  codigoEquipo   String    @unique 
+  presupuestoMax Float     @default(4000.00)
+  presupuestoUso Float     @default(0.00)
+  
+  licencia       Licencia?
+}
+
+model Licencia {
+  id           String   @id @default(uuid())
+  clave        String   @unique 
+  maxUsuarios  Int      @default(3)
+  activa       Boolean  @default(true)
+  
+  maquinaId    String   @unique
+  maquina      Maquina  @relation(fields: [maquinaId], references: [id])
+
+  usuarios     User[]   
+}

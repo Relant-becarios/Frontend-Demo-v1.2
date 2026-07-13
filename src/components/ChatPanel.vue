@@ -37,7 +37,6 @@ const uiStore = useUiStore()
 const messagesContainer = ref<HTMLElement | null>(null)
 const newMessage = ref('')
 
-// Historial inicial simulado
 const messages = ref<{ text: string; sender: 'user' | 'bot' }[]>([
   {
     text: '¡Hola! Soy el asistente virtual de Relant. ¿En qué puedo ayudarte a dosificar hoy?',
@@ -48,14 +47,12 @@ const messages = ref<{ text: string; sender: 'user' | 'bot' }[]>([
 const enviarMensaje = async () => {
   if (!newMessage.value.trim()) return
 
-  // Agrega el mensaje del usuario
   messages.value.push({ text: newMessage.value, sender: 'user' })
   const pregunta = newMessage.value
   newMessage.value = ''
 
   await scrollBottom()
 
-  // Simula el "pensamiento" de la IA
   setTimeout(async () => {
     messages.value.push({
       text: `Entendido. En este momento solo soy una simulación en el frontend. Próximamente podré ayudarte con "${pregunta}".`,
@@ -81,7 +78,7 @@ const scrollBottom = async () => {
   width: 400px;
   height: 100vh;
   background: var(--bg-panel);
-  z-index: 9500;
+  z-index: 25000;
   transition: right 0.4s ease;
   display: flex;
   flex-direction: column;

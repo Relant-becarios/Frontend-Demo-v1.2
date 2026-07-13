@@ -76,10 +76,8 @@ onMounted(async () => {
   todosLosProductos.value = await fetchProductos()
 })
 
-// Mapea los detalles y se trae el precio de la base de datos
 const cartDetails = computed(() => {
   return cartStore.items.map((cartItem) => {
-    // CORRECCIÓN: Forzamos el ID del carrito a ser texto para que no falle la comparación
     const idBuscado = String(cartItem.id)
 
     const productDetail = todosLosProductos.value.find(
@@ -92,7 +90,6 @@ const cartDetails = computed(() => {
     return {
       ...cartItem,
       Producto: productDetail?.Producto || `Producto no encontrado (${idBuscado})`,
-      // CORRECCIÓN: Agregamos el placeholder directo aquí para evitar la imagen rota
       Imagen_URL:
         productDetail?.Imagen_URL || productDetail?.imagen || 'https://via.placeholder.com/150',
       Precio: productDetail?.Precio || 0,
@@ -100,7 +97,6 @@ const cartDetails = computed(() => {
   })
 })
 
-// Calcula la suma total reactiva del carrito
 const totalEstimado = computed(() => {
   return cartDetails.value.reduce((total, item) => {
     const precio = parseFloat(String(item.Precio)) || 0
@@ -125,7 +121,6 @@ const procesarCompra = async () => {
   try {
     const payload = cartStore.items.map((item) => ({ id: item.id, cantidad: item.cant }))
 
-    // Llamada al backend
     interface RespuestaBackend {
       success: boolean
       mensaje: string
@@ -155,7 +150,7 @@ const procesarCompra = async () => {
   width: 380px;
   height: 100vh;
   background: var(--bg-panel);
-  z-index: 9000;
+  z-index: 25000;
   transition: right 0.4s ease;
   padding: 20px;
   border-left: 2px solid var(--accent);

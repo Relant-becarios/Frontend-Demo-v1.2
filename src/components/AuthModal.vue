@@ -1,5 +1,7 @@
 <template>
-  <div v-if="uiStore.isAuthModalOpen" class="modal-detalles" @click.self="uiStore.closeAll">
+  <div v-if="uiStore.isAuthModalOpen" class="modal-wrapper">
+    <div class="modal-backdrop" @click="uiStore.closeAll"></div>
+
     <div class="auth-content">
       <div class="auth-header">
         <h2 class="auth-title">{{ esRegistro ? 'Crear Cuenta' : 'Iniciar Sesión' }}</h2>
@@ -69,19 +71,29 @@ const procesarFormulario = async () => {
 </script>
 
 <style scoped>
-.modal-detalles {
+.modal-wrapper {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.8);
-  z-index: 9500;
+  z-index: 25000;
   display: flex;
   align-items: center;
   justify-content: center;
 }
+.modal-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 1;
+}
 .auth-content {
+  position: relative;
+  z-index: 2;
   background: var(--bg-panel);
   width: 100%;
   max-width: 400px;
@@ -90,6 +102,7 @@ const procesarFormulario = async () => {
   border: 1px solid var(--border);
   color: var(--text-main);
   box-sizing: border-box;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
 }
 .auth-header {
   display: flex;

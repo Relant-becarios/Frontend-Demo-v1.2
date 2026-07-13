@@ -4,14 +4,19 @@
       <h1 class="logo-nav">RELANT</h1>
     </router-link>
 
-    <div class="search-container">
+    <!-- Barra de búsqueda: AHORA SOLO SE MUESTRA EN EL CATÁLOGO -->
+    <div class="search-container" v-if="mostrarFunciones">
       <div class="dropdown">
-        <button class="btn-cat" @click="showCats = !showCats">
+        <button class="btn-cat" @click.stop="showCats = !showCats">
           <span>{{ marketStore.selectedCategory }}</span> ▼
         </button>
         <div class="dropdown-content" :class="{ show: showCats }">
-          <a @click="seleccionarCat('Todas')">Todas</a>
-          <a v-for="cat in marketStore.availableCategories" :key="cat" @click="seleccionarCat(cat)">
+          <a @click.stop="seleccionarCat('Todas')">Todas</a>
+          <a
+            v-for="cat in marketStore.availableCategories"
+            :key="cat"
+            @click.stop="seleccionarCat(cat)"
+          >
             {{ cat }}
           </a>
         </div>
@@ -26,44 +31,56 @@
       />
     </div>
 
+    <!-- Espaciador invisible para no romper el diseño cuando no hay barra -->
+    <div v-else style="flex-grow: 1"></div>
+
     <div class="nav-actions">
+      <!-- Sistema de Login (Siempre visible) -->
       <div v-if="authStore.usuarioActual" class="user-menu">
         <span class="user-email">{{ authStore.usuarioActual.email?.split('@')[0] }}</span>
-        <button class="btn-logout" @click="authStore.cerrarSesion">Salir</button>
+        <button class="btn-logout" @click.stop="authStore.cerrarSesion">Salir</button>
       </div>
-      <div v-else class="login-trigger" @click="uiStore.toggleAuthModal">Ingresar</div>
+      <div v-else class="login-trigger" @click.stop="uiStore.toggleAuthModal">Ingresar</div>
 
-      <div
-        @click="uiStore.toggleChat"
-        style="cursor: pointer; font-size: 14px; font-weight: 900; color: var(--color-texto)"
-        title="Asistente AI"
-      >
-        ✨ AI
-      </div>
+      <!-- ESTE BLOQUE SOLO SE VERÁ SI ESTAMOS EN /catalogo -->
+      <div class="catalog-only-actions" v-if="mostrarFunciones">
+        <!-- Botón AI -->
+        <div
+          @click.stop="uiStore.toggleChat"
+          style="cursor: pointer; font-size: 14px; font-weight: 900; color: var(--color-texto)"
+          title="Asistente AI"
+        >
+          ✨ AI
+        </div>
 
-      <div class="cart-icon" @click="uiStore.toggleCart">
-        <img
-          src="https://cdn-icons-png.flaticon.com/512/1170/1170678.png"
-          width="28"
-          class="img-carrito"
-        />
-        <span class="cart-badge">{{ cartStore.totalItems }}</span>
-      </div>
+        <!-- Botón Carrito -->
+        <div class="cart-icon" @click.stop="uiStore.toggleCart">
+          <img
+            src="https://cdn-icons-png.flaticon.com/512/1170/1170678.png"
+            width="28"
+            class="img-carrito"
+          />
+          <span class="cart-badge">{{ cartStore.totalItems }}</span>
+        </div>
 
-      <div class="icon-hamburguesa" @click="uiStore.toggleMenu">
-        <span></span><span></span><span></span>
+        <!-- Menú Hamburguesa -->
+        <div class="icon-hamburguesa" @click.stop="uiStore.toggleMenu">
+          <span></span><span></span><span></span>
+        </div>
       </div>
     </div>
   </nav>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
 import { useMarketStore } from '@/stores/market'
 import { useUiStore } from '@/stores/ui'
 import { useAuthStore } from '@/stores/auth'
 
+const route = useRoute()
 const cartStore = useCartStore()
 const marketStore = useMarketStore()
 const uiStore = useUiStore()
@@ -71,6 +88,11 @@ const authStore = useAuthStore()
 
 const showCats = ref(false)
 const emit = defineEmits(['buscar'])
+
+// Lógica para detectar si estamos en la página del catálogo
+const mostrarFunciones = computed(() => {
+  return route.path === '/catalogo'
+})
 
 const seleccionarCat = (cat: string) => {
   marketStore.selectedCategory = cat
@@ -83,7 +105,6 @@ const ejecutarBusqueda = () => {
   emit('buscar')
 }
 
-// 3. Función que hace el "Borrón y cuenta nueva"
 const limpiarInicio = () => {
   marketStore.searchQuery = ''
   marketStore.selectedCategory = 'Todas'
@@ -101,7 +122,7 @@ const limpiarInicio = () => {
   border-bottom: 1px solid #30363d;
   position: sticky;
   top: 0;
-  z-index: 2000;
+  z-index: 25000; /* Z-index alto para quedar sobre el menú lateral y carrito */
 }
 .logo-nav {
   font-size: 26px;
@@ -128,7 +149,7 @@ const limpiarInicio = () => {
 }
 .btn-cat {
   background: #ff0000;
-  color: white; /* Este se queda en blanco porque el fondo es rojo */
+  color: white;
   border: none;
   padding: 10px 20px;
   font-weight: bold;
@@ -146,7 +167,7 @@ const limpiarInicio = () => {
   flex-grow: 1;
   border: none;
   background: transparent;
-  color: var(--color-texto); /* Corrección */
+  color: var(--color-texto);
   padding: 12px 15px;
   outline: none;
   font-size: 14px;
@@ -159,7 +180,7 @@ const limpiarInicio = () => {
   background: var(--bg-panel);
   min-width: 220px;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
-  z-index: 3000;
+  z-index: 20000;
   border: 1px solid #30363d;
   border-radius: 8px;
   top: 100%;
@@ -172,7 +193,7 @@ const limpiarInicio = () => {
   display: block;
 }
 .dropdown-content a {
-  color: var(--color-texto); /* Corrección */
+  color: var(--color-texto);
   padding: 12px 16px;
   text-decoration: none;
   display: block;
@@ -189,21 +210,23 @@ const limpiarInicio = () => {
   align-items: center;
   gap: 20px;
 }
+.catalog-only-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
 .cart-icon {
   position: relative;
   cursor: pointer;
 }
-/* CORRECCIÓN DE LA IMAGEN DEL CARRITO */
 .img-carrito {
-  filter: invert(1); /* Blanco por defecto en modo oscuro */
+  filter: invert(1);
 }
-/* Si el body tiene clase de tema claro, se le quita el filtro y vuelve a ser negra */
 :global(body.light-mode .img-carrito),
 :global(body[data-theme='light'] .img-carrito),
 :global(body.light .img-carrito) {
   filter: invert(0) !important;
 }
-
 .cart-badge {
   position: absolute;
   top: -8px;
@@ -226,27 +249,22 @@ const limpiarInicio = () => {
   flex-direction: column;
   justify-content: space-between;
   cursor: pointer;
-  margin-left: 15px;
-  /* 1. Le decimos explícitamente que su color base es nuestra variable (con blanco de salvavidas) */
+  margin-left: 5px;
   color: var(--color-texto, #ffffff);
 }
-
 .icon-hamburguesa span {
   display: block;
   width: 100%;
   height: 3px;
-  /* 2. currentColor copia automáticamente el color que definimos arriba */
   background-color: currentColor;
   border-radius: 2px;
   transition: 0.3s;
 }
-
-/* Estilos Autenticación */
 .login-trigger {
   cursor: pointer;
   font-size: 14px;
   font-weight: bold;
-  color: var(--color-texto); /* Corrección */
+  color: var(--color-texto);
   background: #30363d;
   padding: 6px 12px;
   border-radius: 20px;

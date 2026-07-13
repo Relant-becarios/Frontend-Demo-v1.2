@@ -3,32 +3,61 @@
     <NavBar @toggle-cart="$emit('toggle-cart')" />
 
     <header class="welcome-header">
-      <h1>Bienvenido a RELANT</h1>
-      <p>Selecciona una de nuestras herramientas o explora el catálogo para comenzar.</p>
+      <h1>SISTEMA CENTRAL RELANT</h1>
+      <p>Seleccione el módulo de operación o navegue al catálogo de refacciones.</p>
     </header>
 
     <section class="modules-section">
-      <h2 class="section-title">Herramientas Personalizadas</h2>
+      <h2 class="section-title">Módulos del Sistema</h2>
 
       <div class="cards-grid">
         <div class="module-card" @click="goTo('/catalogo')">
-          <div class="icon">📚</div>
-          <h3>Catálogo</h3>
-          <p>Explora todos nuestros productos.</p>
+          <div class="icon-svg">
+            <svg
+              width="40"
+              height="40"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
+            </svg>
+          </div>
+          <h3>Catálogo de Partes</h3>
+          <p>Acceso a inventario, refacciones y especificaciones técnicas.</p>
         </div>
 
-        <div
-          class="module-card"
-          :class="{ 'locked-card': !authStore.usuarioActual }"
-          @click="authStore.usuarioActual ? goTo('/maquina') : pedirMembresia()"
-        >
-          <div class="icon" style="position: relative">
-            🎰
-            <span v-if="!authStore.usuarioActual" class="lock-badge">🔒</span>
+        <div class="module-card" @click="manejarClickMaquina">
+          <div class="icon-svg" style="position: relative">
+            <svg
+              width="40"
+              height="40"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="4" y="2" width="16" height="20" rx="2" ry="2" />
+              <path d="M8 6h.01" />
+              <path d="M16 6h.01" />
+              <path d="M12 6h.01" />
+              <path d="M12 10h.01" />
+              <path d="M12 14h.01" />
+              <path d="M16 10h.01" />
+              <path d="M16 14h.01" />
+              <path d="M8 10h.01" />
+              <path d="M8 14h.01" />
+              <path d="M8 18h8" />
+            </svg>
+            <span v-if="!esPremium" class="lock-badge">🔒</span>
           </div>
-          <h3>Máquina Expendedora</h3>
-          <p v-if="authStore.usuarioActual">Gestión y surtido automatizado.</p>
-          <p v-else class="locked-text">Requiere membresía para acceder.</p>
+          <h3>Gestión de Máquinas</h3>
+          <p>Control y surtido automatizado de equipos expendedores.</p>
         </div>
 
         <div class="module-card" @click="goTo('/concepto')">
@@ -41,63 +70,189 @@
             </div>
             <div class="node bottom">BASE</div>
           </div>
-          <h3>Concepto</h3>
-          <p>Arma tu producto a medida.</p>
+          <h3>Configurador</h3>
+          <p>Diseño y ensamblaje paramétrico de válvulas a medida.</p>
         </div>
 
         <div class="module-card" @click="goTo('/ia-foto')">
-          <div class="icon">🤖📸</div>
-          <h3>I.A. Foto</h3>
-          <p>Análisis visual inteligente.</p>
+          <div class="icon-svg">
+            <svg
+              width="40"
+              height="40"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path
+                d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
+              />
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+              <line x1="12" y1="22.08" x2="12" y2="12" />
+            </svg>
+          </div>
+          <h3>Visión Artificial</h3>
+          <p>Reconocimiento y análisis de componentes industriales.</p>
         </div>
       </div>
     </section>
 
     <section class="news-section">
-      <h2 class="section-title">Noticias y Actualizaciones</h2>
-
+      <h2 class="section-title">Boletín Técnico</h2>
       <div class="news-feed">
         <article class="news-item">
-          <h4>🔥 Nuevas válvulas en stock</h4>
+          <h4>Actualización de Inventario</h4>
           <p>
-            Hemos actualizado el inventario con las últimas series AXDV para dispensado de
-            precisión.
+            Se han integrado al catálogo las nuevas series AXDV para dispensado de alta precisión.
+            Consulte las especificaciones en la sección correspondiente.
           </p>
         </article>
         <article class="news-item">
-          <h4>🚀 Actualización del sistema I.A.</h4>
+          <h4>Mejoras en Visión Artificial</h4>
           <p>
-            El reconocimiento visual en "I.A. Foto" ahora detecta componentes con un 30% más de
-            precisión.
+            El algoritmo de reconocimiento ha sido calibrado para detectar micro-componentes con un
+            30% más de fiabilidad bajo condiciones complejas.
           </p>
         </article>
       </div>
     </section>
+
+    <!-- MODAL DE ACCESO -->
+    <div v-if="mostrarModalAcceso" class="modal-wrapper">
+      <div class="modal-backdrop" @click="cerrarModalAcceso"></div>
+      <div class="access-content">
+        <div class="access-header">
+          <h2 class="access-title">🔒 Acceso Restringido</h2>
+          <span @click="cerrarModalAcceso" class="close-icon">✕</span>
+        </div>
+
+        <div class="access-body">
+          <p class="access-desc">
+            Para acceder y operar este equipo, registre sus credenciales y la clave de la máquina.
+          </p>
+
+          <div class="input-group">
+            <label>Nombre Completo</label>
+            <input type="text" v-model="nombreIngresado" placeholder="Ej. Juan Pérez" />
+          </div>
+          <div class="input-group">
+            <label>Correo Electrónico</label>
+            <input type="email" v-model="emailIngresado" placeholder="juan@empresa.com" />
+          </div>
+          <div class="input-group">
+            <label>Clave de Acceso Secreta</label>
+            <input
+              type="password"
+              v-model="claveIngresada"
+              placeholder="Ingrese su clave..."
+              @keyup.enter="verificarClave"
+            />
+          </div>
+
+          <p v-if="errorClave" class="error-msg">{{ mensajeErrorApi }}</p>
+
+          <button class="btn-verify" @click="verificarClave">REGISTRAR Y VERIFICAR</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { useUiStore } from '@/stores/ui'
 import NavBar from '@/components/NavBar.vue'
 
 defineEmits(['toggle-cart'])
 
 const router = useRouter()
 const authStore = useAuthStore()
-const uiStore = useUiStore()
 
 const goTo = (ruta: string) => {
   router.push(ruta)
 }
 
-const pedirMembresia = () => {
-  uiStore.toggleAuthModal()
+const esPremium = computed(() => {
+  if (!authStore.usuarioActual) return false
+  const usuario = authStore.usuarioActual as { rol?: string }
+  const rol = usuario.rol?.toLowerCase()
+  return rol === 'premium' || rol === 'admin'
+})
+
+// Variables del Modal
+const mostrarModalAcceso = ref(false)
+const nombreIngresado = ref('')
+const emailIngresado = ref('')
+const claveIngresada = ref('')
+const errorClave = ref(false)
+const mensajeErrorApi = ref('')
+
+const manejarClickMaquina = () => {
+  if (esPremium.value) {
+    // Si es admin/premium, puedes redirigirlo directo a una vista de admin o pedir clave
+    goTo('/maquina/acceso-admin')
+  } else {
+    mostrarModalAcceso.value = true
+  }
+}
+
+const cerrarModalAcceso = () => {
+  mostrarModalAcceso.value = false
+  nombreIngresado.value = ''
+  emailIngresado.value = ''
+  claveIngresada.value = ''
+  errorClave.value = false
+  mensajeErrorApi.value = ''
+}
+
+// Validación Real con el Backend
+const verificarClave = async () => {
+  errorClave.value = false
+  mensajeErrorApi.value = ''
+
+  // 1. Validar que no falten datos
+  if (!claveIngresada.value || !nombreIngresado.value || !emailIngresado.value) {
+    errorClave.value = true
+    mensajeErrorApi.value = 'Por favor, llene todos los campos.'
+    return
+  }
+
+  try {
+    // 2. Enviar los datos al servidor Express
+    const response = await fetch('http://localhost:3000/api/validar-licencia', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        clave: claveIngresada.value,
+        emailUsuario: emailIngresado.value,
+        nombreUsuario: nombreIngresado.value,
+      }),
+    })
+
+    const data = await response.json()
+
+    // 3. Manejar la respuesta
+    if (response.ok && data.success) {
+      cerrarModalAcceso()
+      // Redirige al panel dinámico de esa máquina
+      goTo(`/maquina/${data.maquinaId}`)
+    } else {
+      errorClave.value = true
+      mensajeErrorApi.value = data.error || 'Clave incorrecta o límite de usuarios alcanzado.'
+    }
+  } catch (error) {
+    console.error(error)
+    errorClave.value = true
+    mensajeErrorApi.value = 'Error conectando al servidor. Verifique su conexión.'
+  }
 }
 </script>
 
 <style scoped>
+/* Estilos Generales */
 .welcome-container {
   min-height: 100vh;
   background: var(--bg-main);
@@ -105,13 +260,15 @@ const pedirMembresia = () => {
 }
 .welcome-header {
   text-align: center;
-  margin: 40px 0;
+  margin: 50px 0;
 }
 .welcome-header h1 {
-  font-size: 2.5rem;
-  color: var(--accent);
-  text-transform: uppercase;
-  letter-spacing: 2px;
+  font-size: 2.2rem;
+  color: var(--text-main);
+  letter-spacing: 1px;
+}
+.welcome-header p {
+  color: var(--text-muted);
 }
 .modules-section,
 .news-section {
@@ -120,11 +277,16 @@ const pedirMembresia = () => {
   margin: 0 auto 50px auto;
 }
 .section-title {
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   margin-bottom: 25px;
   padding-bottom: 10px;
-  border-bottom: 2px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
+
+/* Grid de Módulos */
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -133,58 +295,46 @@ const pedirMembresia = () => {
 .module-card {
   background: var(--bg-panel);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 30px 20px;
   text-align: center;
   cursor: pointer;
-  transition:
-    transform 0.2s,
-    box-shadow 0.2s,
-    border-color 0.2s;
+  transition: all 0.2s ease;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
 }
 .module-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 24px rgba(255, 0, 0, 0.15);
   border-color: var(--accent);
+  background: rgba(255, 0, 0, 0.02);
 }
-.icon {
-  font-size: 3.5rem;
+.icon-svg {
+  color: var(--accent);
   margin-bottom: 15px;
-}
-.module-card h3 {
-  margin: 10px 0;
-  font-size: 1.2rem;
-}
-.module-card p {
-  font-size: 0.9rem;
-  color: var(--text-muted);
-  margin: 0;
-}
-.locked-card {
-  opacity: 0.8;
-  background: var(--bg-input);
-}
-.locked-card:hover {
-  border-color: var(--border);
-  box-shadow: none;
-  transform: translateY(0);
-}
-.locked-text {
-  color: var(--accent) !important;
-  font-weight: bold;
 }
 .lock-badge {
   position: absolute;
-  bottom: 0;
-  right: -10px;
-  font-size: 1.5rem;
+  top: -10px;
+  right: -15px;
+  font-size: 1.2rem;
   background: var(--bg-panel);
   border-radius: 50%;
+  padding: 2px;
 }
+.module-card h3 {
+  margin: 10px 0;
+  font-size: 1.1rem;
+  color: var(--text-main);
+}
+.module-card p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Diagrama de Concepto */
 .diagram-container {
   display: flex;
   flex-direction: column;
@@ -193,25 +343,27 @@ const pedirMembresia = () => {
   width: 100%;
 }
 .node {
-  background: var(--bg-main);
-  font-size: 0.7rem;
+  background: var(--bg-input);
+  font-size: 0.65rem;
+  color: var(--text-muted);
   font-weight: bold;
-  padding: 4px 8px;
-  border-radius: 4px;
-  border: 1px solid var(--accent);
+  padding: 4px 10px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
   z-index: 2;
+  letter-spacing: 1px;
 }
 .lines-horizontal {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
-  margin: 10px 0;
+  margin: 12px 0;
   position: relative;
 }
 .center-hub {
-  width: 16px;
-  height: 16px;
+  width: 12px;
+  height: 12px;
   background: var(--accent);
   border-radius: 50%;
   margin: 0 15px;
@@ -225,22 +377,21 @@ const pedirMembresia = () => {
   z-index: 1;
 }
 .center-hub::before {
-  width: 2px;
+  width: 1px;
   height: 60px;
-  top: -22px;
-  left: 7px;
+  top: -24px;
+  left: 5px;
 }
 .center-hub::after {
-  width: 80px;
-  height: 2px;
-  top: 7px;
-  left: -32px;
+  width: 90px;
+  height: 1px;
+  top: 5px;
+  left: -39px;
 }
+
+/* Sección de Noticias */
 .news-section {
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 30px;
+  background: transparent;
 }
 .news-feed {
   display: flex;
@@ -248,22 +399,121 @@ const pedirMembresia = () => {
   gap: 15px;
 }
 .news-item {
-  padding: 20px;
-  border-left: 4px solid var(--accent);
-  background: var(--bg-input);
-  border-radius: 0 8px 8px 0;
-  transition: transform 0.2s;
-}
-.news-item:hover {
-  transform: translateX(5px);
+  padding: 20px 25px;
+  border-left: 3px solid var(--accent);
+  background: var(--bg-panel);
+  border-radius: 0 6px 6px 0;
+  border-top: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
 }
 .news-item h4 {
-  margin: 0 0 8px 0;
-  font-size: 1.1rem;
+  margin: 0 0 10px 0;
+  font-size: 1rem;
+  color: var(--text-main);
 }
 .news-item p {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* Modal de Acceso Restringido */
+.modal-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 25000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 1;
+}
+.access-content {
+  position: relative;
+  z-index: 2;
+  background: var(--bg-panel);
+  width: 100%;
+  max-width: 420px;
+  padding: 30px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  color: var(--text-main);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+}
+.access-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.access-title {
+  color: var(--accent);
+  margin: 0;
+  font-size: 1.5rem;
+}
+.close-icon {
+  cursor: pointer;
+  font-size: 20px;
+  color: var(--text-muted);
+}
+.close-icon:hover {
+  color: var(--text-main);
+}
+.access-desc {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+.input-group {
+  margin-bottom: 15px;
+}
+.input-group label {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 5px;
+  display: block;
+}
+.input-group input {
+  width: 100%;
+  padding: 12px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-main);
+  outline: none;
+  box-sizing: border-box;
+}
+.btn-verify {
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.2s;
+  width: 100%;
+  margin-top: 5px;
+}
+.btn-verify:hover {
+  background: var(--accent-hover);
+}
+.error-msg {
+  color: #ff4444;
+  font-size: 13px;
+  margin-top: -5px;
+  margin-bottom: 10px;
 }
 </style>

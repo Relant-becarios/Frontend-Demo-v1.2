@@ -29,7 +29,7 @@ const navegarA = (ruta: string) => {
   width: 300px;
   height: 100vh;
   background: var(--bg-panel);
-  z-index: 10000;
+  z-index: 25000;
   transition: 0.4s ease;
   border-left: 2px solid var(--accent);
   padding: 25px;

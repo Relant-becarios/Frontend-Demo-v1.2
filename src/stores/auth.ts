@@ -8,10 +8,6 @@ import {
   onAuthStateChanged,
   type User,
 } from 'firebase/auth'
-import { ref as dbRef, set, get } from 'firebase/database'
-import { getDatabase } from 'firebase/database'
-
-const db = getDatabase()
 
 export interface UsuarioConRol extends User {
   rol?: string
@@ -21,16 +17,16 @@ export const useAuthStore = defineStore('auth', () => {
   const usuarioActual = vueRef<UsuarioConRol | null>(null)
   const cargando = vueRef(true)
 
-  onAuthStateChanged(auth, async (user) => {
+  onAuthStateChanged(auth, (user) => {
     if (user) {
-      const referenciaUsuario = dbRef(db, `usuarios/${user.uid}`)
-      const snapshot = await get(referenciaUsuario)
+      let rolAsignado = 'CLIENTE' // Por defecto, todos son clientes
 
-      let rolAsignado = 'basico'
-
-      if (snapshot.exists()) {
-        rolAsignado = snapshot.val().rol
+      // 👇 EL TRUCO: Si el correo es el tuyo, te damos poder absoluto
+      if (user.email === 'relantbecario@relant.com.mx') {
+        rolAsignado = 'ADMIN'
       }
+      // Si tienes otro correo de jefe, puedes agregarlo así:
+      // else if (user.email === 'siza@relant.com.mx') { rolAsignado = 'ADMIN' }
 
       usuarioActual.value = {
         ...user,
@@ -47,14 +43,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const registrarse = async (email: string, pass: string) => {
-    const credenciales = await createUserWithEmailAndPassword(auth, email, pass)
-    const nuevoUsuario = credenciales.user
-
-    await set(dbRef(db, `usuarios/${nuevoUsuario.uid}`), {
-      email: nuevoUsuario.email,
-      rol: 'basico',
-      fechaCreacion: new Date().toISOString(),
-    })
+    await createUserWithEmailAndPassword(auth, email, pass)
   }
 
   const cerrarSesion = async () => {

@@ -18,22 +18,36 @@ model User {
 }
 
 model Maquina {
-  id             String    @id @default(uuid())
-  codigoEquipo   String    @unique 
-  presupuestoMax Float     @default(4000.00)
-  presupuestoUso Float     @default(0.00)
+  id             String     @id @default(uuid())
+  codigoEquipo   String     @unique 
+  presupuestoMax Float      @default(4000.00)
+  presupuestoUso Float      @default(0.00)
   
   licencia       Licencia?
+  productos      Producto[] // 👈 Relación real de inventario por máquina
 }
 
 model Licencia {
   id           String   @id @default(uuid())
   clave        String   @unique 
   maxUsuarios  Int      @default(3)
-  activa       Boolean  @default(true)
+  activa       Boolean  @default(true) // 👈 Si pasa a 'false', la máquina se bloquea por completo
   
   maquinaId    String   @unique
   maquina      Maquina  @relation(fields: [maquinaId], references: [id])
 
   usuarios     User[]   
+}
+
+model Producto {
+  id        String  @id @default(uuid())
+  posicion  String  // Ej: A1, A2, B1
+  nombre    String
+  precio    Float
+  stock     Int
+  
+  maquinaId String
+  maquina   Maquina @relation(fields: [maquinaId], references: [id], onDelete: Cascade)
+
+  @@unique([maquinaId, posicion]) // Evita que una máquina tenga dos ranuras "A1"
 }

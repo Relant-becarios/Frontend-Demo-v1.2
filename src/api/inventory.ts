@@ -22,7 +22,7 @@ export interface Producto {
   id?: string
   ID?: string
   Producto: string
-  Precio: number | string
+  Precio: number
   Categoria?: string
   Imagen_URL?: string
   imagen?: string
@@ -34,35 +34,32 @@ export interface Producto {
   [key: string]: unknown
 }
 
-// TASAS DE CAMBIO APROXIMADAS A DÓLARES (USD)
+// Tasas de cambio fijas a Dólares (USD)
 const TASAS_USD: Record<string, number> = {
-  MXN: 0.05, // 1 Pesos MXN ≈ 0.05 USD (20 MXN = 1 USD)
-  MXP: 0.05, // Compatibilidad con siglas MXP
-  EUR: 1.1, // 1 Euro EUR ≈ 1.10 USD
-  USD: 1.0, // Dólares base
+  MXN: 0.05, // 1 MXN = 0.05 USD (ej. 8,232.84 MXN ≈ $411.64 USD)
+  MXP: 0.05,
+  EUR: 1.1, // 1 EUR = 1.10 USD
+  USD: 1.0,
 }
 
-// Lee el texto de la moneda, remueve comas, detecta divisa y convierte estrictamente a USD
-const convertirADolares = (valor: unknown): number => {
+// Elimina comas y letras, detecta divisa y convierte estrictamente a USD
+export const convertirADolares = (valor: unknown): number => {
   if (valor === undefined || valor === null) return 0
   if (typeof valor === 'number') return valor
 
   const texto = String(valor).toUpperCase().trim()
 
-  // Extrae únicamente los números y el punto decimal (elimina comas y letras)
-  const montoNumerico = parseFloat(texto.replace(/,/g, '').replace(/[^0-9.]/g, '')) || 0
+  // Elimina comas de miles y cualquier carácter que no sea número o punto decimal
+  const textoSinComas = texto.replace(/,/g, '')
+  const montoNumerico = parseFloat(textoSinComas.replace(/[^0-9.]/g, '')) || 0
 
-  // Detecta la divisa especificada en la celda
   if (texto.includes('EUR') || texto.includes('€')) {
-    const tasaEur = TASAS_USD['EUR'] ?? 1.1
-    return Number((montoNumerico * tasaEur).toFixed(2))
+    return Number((montoNumerico * (TASAS_USD.EUR ?? 0)).toFixed(2))
   }
   if (texto.includes('MXN') || texto.includes('MXP')) {
-    const tasaMxn = TASAS_USD['MXN'] ?? 0.05
-    return Number((montoNumerico * tasaMxn).toFixed(2))
+    return Number((montoNumerico * (TASAS_USD.MXN ?? 0)).toFixed(2))
   }
 
-  // Si dice USD, contiene $ o no especifica divisa, se toma como USD directo
   return Number(montoNumerico.toFixed(2))
 }
 
@@ -89,28 +86,28 @@ export const fetchProductos = async (query = '', categoria = 'Todas'): Promise<P
         skipEmptyLines: true,
         complete: (results) => {
           let productosLimpios: Producto[] = results.data.map((item) => {
-            const idVal = obtenerCampo(item, ['ID', 'id', 'Codigo', 'sku'])
+            const idVal = obtenerCampo(item, ['Codigo/ID', 'ID', 'id', 'Codigo', 'sku'])
             const nombreVal =
-              obtenerCampo(item, ['Producto', 'Nombre', 'descripcion']) || 'Sin nombre'
+              obtenerCampo(item, ['Descripcion', 'Producto', 'Nombre', 'descripcion']) ||
+              'Sin nombre'
             const precioBruto = obtenerCampo(item, ['Precio', 'precio', 'Costo'])
             const imagenVal = obtenerCampo(item, ['Imagen_URL', 'imagen', 'Imagen'])
             const categoriaVal = obtenerCampo(item, ['Categoria', 'categoria']) || 'General'
             const stockVal = obtenerCampo(item, ['Stock', 'stock'])
 
-            // CONVERSIÓN A DÓLARES OBLIGATORIA
             const precioUSD = convertirADolares(precioBruto)
 
             return {
+              ...item, // Colocado primero para no sobrescribir los valores procesados
               id: idVal,
               ID: idVal,
               Producto: nombreVal,
-              Precio: precioUSD,
+              Precio: precioUSD, // Asigna el número limpio e inmune a errores de parseo
               Categoria: categoriaVal,
               Imagen_URL:
                 imagenVal ||
                 `https://via.placeholder.com/150/ffffff/000000?text=${encodeURIComponent(nombreVal)}`,
               Stock: parseInt(stockVal) || 0,
-              ...item,
             }
           })
 
@@ -154,8 +151,7 @@ export const procesarOrdenDeCompra = async (carritoPayload: { id: string; cantid
     )
 
     if (productoDb && productoDb.Precio) {
-      const precioNumerico = convertirADolares(productoDb.Precio)
-      totalCalculado += precioNumerico * itemCarrito.cantidad
+      totalCalculado += productoDb.Precio * itemCarrito.cantidad
     }
   })
 

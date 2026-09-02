@@ -71,7 +71,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
 import { useAuthStore } from '@/stores/auth'
@@ -86,10 +86,10 @@ const uiStore = useUiStore()
 const procesando = ref(false)
 const productosDetalle = ref<Producto[]>([])
 
-// Carga el catálogo para extraer títulos, imágenes y precios convertidos a USD
 const cargarCatalogo = async () => {
   try {
-    productosDetalle.value = await fetchProductos()
+    const data = await fetchProductos()
+    productosDetalle.value = data
   } catch (error) {
     console.error('Error cargando detalles en carrito:', error)
   }
@@ -99,25 +99,60 @@ onMounted(() => {
   cargarCatalogo()
 })
 
-// Mapea los IDs guardados en Pinia con la información completa de la API
+// Refresca la información automáticamente cada vez que el usuario abre el panel
+watch(
+  () => uiStore.isCartOpen,
+  (isOpen) => {
+    if (isOpen) {
+      cargarCatalogo()
+    }
+  },
+)
+
 const itemsConDetalle = computed(() => {
   return cartStore.items.map((item) => {
-    const prod = productosDetalle.value.find(
-      (p) => String(p.id || p.ID || p.sku) === String(item.id),
-    )
+    const targetId = String(item.id || '')
+      .trim()
+      .toLowerCase()
+
+    // Búsqueda flexible tolerante a ID, ID alternativo, SKU o Nombre de Producto
+    const prod = productosDetalle.value.find((p) => {
+      const pId = String(p.id || '')
+        .trim()
+        .toLowerCase()
+      const pID = String(p.ID || '')
+        .trim()
+        .toLowerCase()
+      const pSku = String(p.sku || '')
+        .trim()
+        .toLowerCase()
+      const pNombre = String(p.Producto || p.nombre || '')
+        .trim()
+        .toLowerCase()
+
+      return (
+        (pId && pId === targetId) ||
+        (pID && pID === targetId) ||
+        (pSku && pSku === targetId) ||
+        (pNombre && pNombre === targetId)
+      )
+    })
 
     const precioNumerico =
       typeof prod?.Precio === 'number' ? prod.Precio : parseFloat(String(prod?.Precio || 0)) || 0
 
+    const nombreProducto =
+      prod?.Producto || (item.id !== 'undefined' ? item.id : 'Producto sin título')
+
     return {
       id: item.id,
       cant: item.cant,
-      nombre: prod?.Producto || 'Producto sin título',
+      nombre: nombreProducto,
       precio: precioNumerico,
       imagen:
         prod?.Imagen_URL ||
         prod?.imagen ||
-        `https://via.placeholder.com/60?text=${encodeURIComponent(prod?.Producto || 'Item')}`,
+        `https://via.placeholder.com/60?text=${encodeURIComponent(nombreProducto)}`,
     }
   })
 })
@@ -126,7 +161,6 @@ const totalPrecio = computed(() => {
   return itemsConDetalle.value.reduce((acc, item) => acc + item.precio * item.cant, 0)
 })
 
-// Redirección a la pasarela de pago simulada
 const procesarCompra = () => {
   uiStore.closeAll()
   router.push('/checkout')

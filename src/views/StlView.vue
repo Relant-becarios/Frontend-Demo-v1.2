@@ -241,14 +241,13 @@ const resetCamera = () => {
     box.getSize(size)
     const maxDim = Math.max(size.x, size.y, size.z)
 
-    // Animación suave hacia el centro usando Tween.js sería ideal, pero directo funciona bien:
     camera.position.set(maxDim * 1.5, maxDim * 1.5, maxDim * 1.5)
     controls.target.set(0, size.y / 2, 0)
     controls.update()
   }
 }
 
-// --- LIMPIEZA Y MEMORIA ---
+// --- LIMPIEZA Y MEMORIA (AQUÍ ESTÁ LA CORRECCIÓN) ---
 const onWindowResize = () => {
   if (!camera || !renderer) return
   camera.aspect = window.innerWidth / (window.innerHeight - 60)
@@ -260,14 +259,24 @@ const resetViewer = () => {
   if (animationId) cancelAnimationFrame(animationId)
   window.removeEventListener('resize', onWindowResize)
 
-  // Limpiar memoria de la GPU (¡Muy importante en 3D!)
+  // 1. Destruir eventos del mouse para evitar leaks
+  if (controls) {
+    controls.dispose()
+  }
+
+  // 2. Limpiar memoria de la geometría y material en RAM
   if (currentMesh) {
     scene.remove(currentMesh)
     currentMesh.geometry.dispose()
     ;(currentMesh.material as THREE.Material).dispose()
     currentMesh = null
   }
-  if (renderer) renderer.dispose()
+
+  // 3. Forzar al navegador a limpiar WebGL de la GPU
+  if (renderer) {
+    renderer.forceContextLoss()
+    renderer.dispose()
+  }
 
   fileLoaded.value = false
   wireframeMode.value = false

@@ -6,6 +6,10 @@
   </div>
 </template>
 
+<script setup lang="ts">
+import StlView from '@/views/StlView.vue'
+</script>
+
 <style scoped>
 .page-container {
   padding: 20px;

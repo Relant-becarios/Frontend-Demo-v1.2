@@ -57,12 +57,20 @@ app.put('/api/productos/:id', async (req, res) => {
   const { id } = req.params
   const { precio, stock } = req.body
 
+  const parsedPrecio = parseFloat(precio)
+  const parsedStock = parseInt(stock)
+
+  // VALIDACIÓN DE SEGURIDAD AÑADIDA AQUÍ
+  if (isNaN(parsedPrecio) || isNaN(parsedStock)) {
+    return res.status(400).json({ error: 'Valores numéricos inválidos.' })
+  }
+
   try {
     const prodActualizado = await prisma.producto.update({
       where: { id: id },
       data: {
-        precio: parseFloat(precio),
-        stock: parseInt(stock),
+        precio: parsedPrecio,
+        stock: parsedStock,
       },
     })
     return res.json(prodActualizado)
@@ -128,7 +136,7 @@ app.post('/api/validar-licencia', async (req, res) => {
     }
     return res.json({ success: true, maquinaId: licencia.maquinaId })
   } catch (error) {
-    console.error(error) // 👈 Corregido aquí: Ahora sí usamos el parámetro 'error'
+    console.error(error)
     return res.status(500).json({ error: 'Error de servidor.' })
   }
 })

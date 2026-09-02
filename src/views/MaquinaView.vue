@@ -2,7 +2,7 @@
   <div :class="esModoOscuro ? 'maquina-dark' : 'maquina-light'" class="maquina-dashboard">
     <NavBar @toggle-cart="$emit('toggle-cart')" />
 
-    <!-- 🔐 PANTALLA 1: MODAL DE VALIDACIÓN OBLIGATORIO (Tu opción favorita) -->
+    <!-- 🔐 PANTALLA 1: MODAL DE VALIDACIÓN OBLIGATORIO -->
     <div v-if="!licenciaValidada" class="licencia-overlay">
       <div class="licencia-modal-card">
         <div class="modal-lock-icon">🔐</div>
@@ -17,7 +17,7 @@
             <label>Clave de Licencia:</label>
             <input
               v-model="formClave"
-              type="text"
+              type="password"
               placeholder="Ej: CLAVE-1234"
               required
               class="modal-input"
@@ -56,7 +56,7 @@
       </div>
     </div>
 
-    <!-- 🚨 PANTALLA 2: CORTE AUTOMÁTICO POR FALTA DE PAGO (Si la licencia pasa a activa: false) -->
+    <!-- 🚨 PANTALLA 2: CORTE AUTOMÁTICO POR FALTA DE PAGO -->
     <div v-else-if="maquinaEstaBloqueada" class="corte-pago-overlay">
       <div class="corte-card">
         <span class="corte-icon">⚠️</span>
@@ -339,7 +339,6 @@ const consultarServidorCentral = async () => {
 }
 
 // 💾 IMPACTAR CAMBIOS EN LA CONSOLA DE DUEÑO
-// Nota: nombre corregido para coincidir con template (guardarCambioFisicoBD)
 const guardarCambioFisicoBD = async (item: Producto) => {
   try {
     await fetch(`http://localhost:3000/api/productos/${item.id}`, {
@@ -622,13 +621,11 @@ const procesarPedido = () => {
   align-items: center;
   position: relative;
   cursor: pointer;
-  /* Agregamos una transición limpia para la animación */
   transition:
     transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
     border-color 0.2s ease,
     box-shadow 0.2s ease;
 }
-/* Efecto de elevación e iluminación al pasar el cursor */
 .coil-slot:hover:not(.out-of-stock):not(.slot-admin-mode) {
   border-color: #b91c1c;
   transform: translateY(-4px) scale(1.02);

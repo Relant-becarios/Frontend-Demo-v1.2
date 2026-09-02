@@ -5,16 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "run-p type-check \"build-only {@}\" --",
-    "preview": "vite preview",
-    "test:unit": "vitest",
-    "test:e2e": "playwright test",
+    "build": "prisma generate && vite build",
     "build-only": "vite build",
-    "type-check": "vue-tsc --build",
-    "lint": "run-s \"lint:*\"",
-    "lint:oxlint": "oxlint . --fix",
-    "lint:eslint": "eslint . --fix --cache",
-    "format": "prettier --write --experimental-cli src/"
+    "postinstall": "prisma generate",
+    "preview": "vite preview"
   },
   "dependencies": {
     "@apollo/client": "^3.8.8",

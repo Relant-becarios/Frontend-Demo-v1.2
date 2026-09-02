@@ -4,7 +4,7 @@
       <h1 class="logo-nav">RELANT</h1>
     </router-link>
 
-    <!-- Barra de búsqueda: AHORA SOLO SE MUESTRA EN EL CATÁLOGO -->
+    <!-- Barra de búsqueda: SOLO SE MUESTRA EN EL CATÁLOGO -->
     <div class="search-container" v-if="mostrarFunciones">
       <div class="dropdown">
         <button class="btn-cat" @click.stop="showCats = !showCats">
@@ -31,40 +31,43 @@
       />
     </div>
 
-    <!-- Espaciador invisible para no romper el diseño cuando no hay barra -->
+    <!-- Espaciador invisible cuando no hay barra de búsqueda -->
     <div v-else style="flex-grow: 1"></div>
 
     <div class="nav-actions">
-      <!-- Sistema de Login (Siempre visible) -->
+      <!-- Sistema de Login -->
       <div v-if="authStore.usuarioActual" class="user-menu">
         <span class="user-email">{{ authStore.usuarioActual.email?.split('@')[0] }}</span>
         <button class="btn-logout" @click.stop="authStore.cerrarSesion">Salir</button>
       </div>
       <div v-else class="login-trigger" @click.stop="uiStore.toggleAuthModal">Ingresar</div>
 
-      <!-- ESTE BLOQUE SOLO SE VERÁ SI ESTAMOS EN /catalogo -->
+      <!-- ACCIONES EXCLUSIVAS DEL CATÁLOGO -->
       <div class="catalog-only-actions" v-if="mostrarFunciones">
         <!-- Botón AI -->
-        <div
-          @click.stop="uiStore.toggleChat"
-          style="cursor: pointer; font-size: 14px; font-weight: 900; color: var(--color-texto)"
-          title="Asistente AI"
-        >
-          ✨ AI
-        </div>
+        <div class="btn-ai" @click.stop="uiStore.toggleChat" title="Asistente AI">✨ AI</div>
 
-        <!-- Botón Carrito -->
-        <div class="cart-icon" @click.stop="uiStore.toggleCart">
-          <img
-            src="https://cdn-icons-png.flaticon.com/512/1170/1170678.png"
-            width="28"
-            class="img-carrito"
-          />
+        <!-- Botón Carrito con SVG Autoadaptable -->
+        <div class="cart-icon" @click.stop="uiStore.toggleCart" title="Carrito de Compras">
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="9" cy="21" r="1"></circle>
+            <circle cx="20" cy="21" r="1"></circle>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+          </svg>
           <span class="cart-badge">{{ cartStore.totalItems }}</span>
         </div>
 
         <!-- Menú Hamburguesa -->
-        <div class="icon-hamburguesa" @click.stop="uiStore.toggleMenu">
+        <div class="icon-hamburguesa" @click.stop="uiStore.toggleMenu" title="Menú">
           <span></span><span></span><span></span>
         </div>
       </div>
@@ -89,10 +92,7 @@ const authStore = useAuthStore()
 const showCats = ref(false)
 const emit = defineEmits(['buscar'])
 
-// Lógica para detectar si estamos en la página del catálogo
-const mostrarFunciones = computed(() => {
-  return route.path === '/catalogo'
-})
+const mostrarFunciones = computed(() => route.path === '/catalogo')
 
 const seleccionarCat = (cat: string) => {
   marketStore.selectedCategory = cat
@@ -119,10 +119,11 @@ const limpiarInicio = () => {
   justify-content: space-between;
   padding: 10px 5%;
   background: var(--bg-panel);
-  border-bottom: 1px solid #30363d;
+  border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
-  z-index: 25000; /* Z-index alto para quedar sobre el menú lateral y carrito */
+  z-index: 25000;
+  color: var(--text-main);
 }
 .logo-nav {
   font-size: 26px;
@@ -139,7 +140,7 @@ const limpiarInicio = () => {
   max-width: 550px;
   margin: 0 20px;
   background: var(--bg-input);
-  border: 1px solid #30363d;
+  border: 1px solid var(--border);
   border-radius: 25px;
   position: relative;
   align-items: center;
@@ -167,7 +168,7 @@ const limpiarInicio = () => {
   flex-grow: 1;
   border: none;
   background: transparent;
-  color: var(--color-texto);
+  color: var(--text-main);
   padding: 12px 15px;
   outline: none;
   font-size: 14px;
@@ -179,9 +180,9 @@ const limpiarInicio = () => {
   position: absolute;
   background: var(--bg-panel);
   min-width: 220px;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
   z-index: 20000;
-  border: 1px solid #30363d;
+  border: 1px solid var(--border);
   border-radius: 8px;
   top: 100%;
   left: 0;
@@ -193,13 +194,13 @@ const limpiarInicio = () => {
   display: block;
 }
 .dropdown-content a {
-  color: var(--color-texto);
+  color: var(--text-main);
   padding: 12px 16px;
   text-decoration: none;
   display: block;
   cursor: pointer;
   font-size: 14px;
-  border-bottom: 1px solid #30363d;
+  border-bottom: 1px solid var(--border);
 }
 .dropdown-content a:hover {
   background: #ff0000;
@@ -214,24 +215,30 @@ const limpiarInicio = () => {
   display: flex;
   align-items: center;
   gap: 20px;
+  color: var(--text-main);
+}
+.btn-ai {
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 900;
+  color: var(--text-main);
+  transition: opacity 0.2s;
+}
+.btn-ai:hover {
+  opacity: 0.8;
 }
 .cart-icon {
   position: relative;
   cursor: pointer;
-}
-.img-carrito {
-  filter: invert(1);
-}
-:global(body.light-mode .img-carrito),
-:global(body[data-theme='light'] .img-carrito),
-:global(body.light .img-carrito) {
-  filter: invert(0) !important;
+  display: flex;
+  align-items: center;
+  color: var(--text-main);
 }
 .cart-badge {
   position: absolute;
   top: -8px;
   right: -8px;
-  background: red;
+  background: #ff0000;
   color: white;
   border-radius: 50%;
   width: 18px;
@@ -243,14 +250,13 @@ const limpiarInicio = () => {
   font-weight: bold;
 }
 .icon-hamburguesa {
-  width: 30px;
-  height: 20px;
+  width: 26px;
+  height: 18px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   cursor: pointer;
-  margin-left: 5px;
-  color: var(--color-texto, #ffffff);
+  color: var(--text-main);
 }
 .icon-hamburguesa span {
   display: block;
@@ -264,15 +270,17 @@ const limpiarInicio = () => {
   cursor: pointer;
   font-size: 14px;
   font-weight: bold;
-  color: var(--color-texto);
-  background: #30363d;
-  padding: 6px 12px;
+  color: var(--text-main);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  padding: 6px 14px;
   border-radius: 20px;
-  transition: 0.2s;
+  transition: all 0.2s ease;
 }
 .login-trigger:hover {
   background: #ff0000;
   color: white;
+  border-color: #ff0000;
 }
 .user-menu {
   display: flex;
@@ -281,7 +289,7 @@ const limpiarInicio = () => {
 }
 .user-email {
   font-size: 13px;
-  color: #8b949e;
+  color: var(--text-muted);
   font-weight: bold;
 }
 .btn-logout {

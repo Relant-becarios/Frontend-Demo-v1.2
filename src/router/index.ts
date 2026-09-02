@@ -24,6 +24,11 @@ const router = createRouter({
       component: MaquinaView,
     },
     {
+      path: '/checkout',
+      name: 'checkout',
+      component: () => import('@/views/CheckoutView.vue'),
+    },
+    {
       path: '/stl',
       name: 'stl',
       component: StlView,

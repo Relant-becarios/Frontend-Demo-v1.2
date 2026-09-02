@@ -1,4 +1,5 @@
-// Definición de las interfaces para que TypeScript reconozca la estructura de refacciones
+import Papa from 'papaparse'
+
 export interface Pieza {
   id_refaccion?: string
   nombre_refaccion?: string
@@ -25,7 +26,7 @@ export interface Producto {
   Categoria?: string
   Imagen_URL?: string
   imagen?: string
-  // NUEVOS CAMPOS: Dejamos la puerta abierta en el molde para recibir planos desde la Base de Datos
+  Stock?: number
   Imagen_Explosionada_URL?: string
   imagen_explosionada?: string
   Kits?: Kit[]
@@ -33,89 +34,84 @@ export interface Producto {
   [key: string]: unknown
 }
 
-interface ProductoBackend {
-  codigo?: string
-  descripcion?: string
-  ubicacion?: string
-  skuAlterno?: string
-  cantidad?: number
-  minStock?: number
-  [key: string]: unknown
-}
-
-// Función auxiliar para obtener el JWT del usuario autenticado actual
-const obtenerTokenJWT = async (): Promise<string | null> => {
-  console.log('Generando JWT simulado para enviar a Spring Boot...')
-  return 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.SIMULADO'
-}
+// 👈 PEGA AQUÍ EL ENLACE QUE COPIASTE EN GOOGLE SHEETS
+const GOOGLE_SHEETS_CSV_URL =
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vQd1bWy-8FYDU0CLVSQJ9YqVTtj2edrgbvvVfaeATeb3wHwT7NhBvLSzV_YZ3UM5yZqLzFmqB7HKnnF/pub?output=csv'
 
 export const fetchProductos = async (query = '', categoria = 'Todas'): Promise<Producto[]> => {
   try {
-    const url = 'https://demo-3u7k.onrender.com/api/v1/products'
-    const response = await fetch(url)
+    const response = await fetch(GOOGLE_SHEETS_CSV_URL)
+    if (!response.ok) throw new Error('No se pudo descargar el archivo de Google Sheets')
 
-    if (!response.ok) throw new Error('Error de red al obtener productos')
+    const csvText = await response.text()
 
-    const responseData = await response.json()
-    const data: ProductoBackend[] = responseData.content || []
+    return new Promise((resolve) => {
+      Papa.parse(csvText, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => {
+          let productosLimpios: Producto[] = (results.data as Record<string, string>[]).map((item) => {
+            const idVal = item.ID || item.id || item.Codigo || ''
+            const nombreVal = item.Producto || item.Nombre || item.descripcion || 'Sin nombre'
+            const precioVal = parseFloat(String(item.Precio || item.precio || 0)) || 0
 
-    // Mapeamos los campos del backend (Material) al modelo del frontend (Producto)
-    let productosLimpios: Producto[] = data.map((item: ProductoBackend) => ({
-      id: item.codigo,
-      Producto: item.descripcion || '',
-      Precio: 0.0,
-      Categoria: item.ubicacion || 'General',
-      Imagen_URL:
-        'https://via.placeholder.com/150/ffffff/000000?text=' +
-        encodeURIComponent(item.skuAlterno || item.codigo || ''),
-      sku: item.skuAlterno || item.codigo,
-      cantidad: item.cantidad,
-      minStock: item.minStock,
-      ...item,
-    }))
+            return {
+              id: String(idVal),
+              ID: String(idVal),
+              Producto: nombreVal,
+              Precio: precioVal,
+              Categoria: item.Categoria || item.categoria || 'General',
+              Imagen_URL:
+                item.Imagen_URL ||
+                item.imagen ||
+                `https://via.placeholder.com/150/ffffff/000000?text=${encodeURIComponent(nombreVal)}`,
+              Stock: parseInt(String(item.Stock || item.stock || 0)) || 0,
+              ...item,
+            }
+          })
 
-    if (categoria !== 'Todas') {
-      productosLimpios = productosLimpios.filter((p: Producto) => p.Categoria === categoria)
-    }
-    if (query.trim() !== '') {
-      const busqueda = query.toLowerCase().trim()
-      productosLimpios = productosLimpios.filter(
-        (p: Producto) =>
-          String(p.Producto || '')
-            .toLowerCase()
-            .includes(busqueda) ||
-          String(p.id || '')
-            .toLowerCase()
-            .includes(busqueda) ||
-          String(p.sku || '')
-            .toLowerCase()
-            .includes(busqueda),
-      )
-    }
-    return productosLimpios
+          // Filtrado por categoría
+          if (categoria !== 'Todas') {
+            productosLimpios = productosLimpios.filter((p: Producto) => p.Categoria === categoria)
+          }
+
+          // Filtrado por búsqueda en tiempo real
+          if (query.trim() !== '') {
+            const busqueda = query.toLowerCase().trim()
+            productosLimpios = productosLimpios.filter(
+              (p: Producto) =>
+                String(p.Producto || '')
+                  .toLowerCase()
+                  .includes(busqueda) ||
+                String(p.id || '')
+                  .toLowerCase()
+                  .includes(busqueda) ||
+                String(p.Categoria || '')
+                  .toLowerCase()
+                  .includes(busqueda),
+            )
+          }
+
+          resolve(productosLimpios)
+        },
+      })
+    })
   } catch (error) {
-    console.error('Error en fetchProductos:', error)
+    console.error('Error al cargar catálogo desde Google Sheets:', error)
     return []
   }
 }
 
 export const procesarOrdenDeCompra = async (carritoPayload: { id: string; cantidad: number }[]) => {
-  const token = await obtenerTokenJWT()
-  console.log('Enviando petición a Spring Boot con JWT y este Payload:', token, carritoPayload)
-
-  // --- ARREGLO: CÁLCULO DINÁMICO DEL TOTAL ---
-  // Obtenemos la lista de productos real para buscar sus costos
   const productosBaseDeDatos = await fetchProductos()
   let totalCalculado = 0
 
   carritoPayload.forEach((itemCarrito) => {
-    // Buscamos el producto en la lista por su ID o Nombre para extraer su precio real
     const productoDb = productosBaseDeDatos.find(
       (p) => String(p.id || p.ID) === itemCarrito.id || p.Producto === itemCarrito.id,
     )
 
     if (productoDb && productoDb.Precio) {
-      // Limpiamos y convertimos el precio a número por si viene como texto
       const precioNumerico = parseFloat(String(productoDb.Precio)) || 0
       totalCalculado += precioNumerico * itemCarrito.cantidad
     }
@@ -127,7 +123,7 @@ export const procesarOrdenDeCompra = async (carritoPayload: { id: string; cantid
         resolve({
           success: true,
           mensaje: 'Orden procesada y cotización enviada correctamente.',
-          totalCalculadoEnBackend: totalCalculado, // Enviamos la suma matemática real
+          totalCalculadoEnBackend: totalCalculado,
         }),
       1500,
     )

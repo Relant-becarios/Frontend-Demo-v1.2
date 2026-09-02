@@ -122,7 +122,7 @@ const limpiarInicio = () => {
   border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
-  z-index: 25000;
+  z-index: 100;
   color: var(--text-main);
 }
 .logo-nav {

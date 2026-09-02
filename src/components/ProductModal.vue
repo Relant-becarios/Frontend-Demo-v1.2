@@ -33,7 +33,7 @@
             <button class="btn-primary" @click="añadirAlCarrito">AÑADIR AL CARRITO DE COTIZACIÓN</button>
 
             <button class="btn-refacciones" @click="irARefacciones">
-              ⚙️ VER KITS Y REFACCIONES (VISTA EXPLOSIONADA)
+               VER KITS Y REFACCIONES (VISTA EXPLOSIONADA)
             </button>
 
             <button class="btn-secondary" @click="marketStore.closeModal">CERRAR FICHA TÉCNICA</button>

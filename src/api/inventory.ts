@@ -34,7 +34,45 @@ export interface Producto {
   [key: string]: unknown
 }
 
-// 👈 PEGA AQUÍ EL ENLACE QUE COPIASTE EN GOOGLE SHEETS
+// TASAS DE CAMBIO APROXIMADAS A DÓLARES (USD)
+const TASAS_USD: Record<string, number> = {
+  MXN: 0.05, // 1 Pesos MXN ≈ 0.05 USD (20 MXN = 1 USD)
+  MXP: 0.05, // Compatibilidad con siglas MXP
+  EUR: 1.1, // 1 Euro EUR ≈ 1.10 USD
+  USD: 1.0, // Dólares base
+}
+
+// Lee el texto de la moneda, remueve comas, detecta divisa y convierte estrictamente a USD
+const convertirADolares = (valor: unknown): number => {
+  if (valor === undefined || valor === null) return 0
+  if (typeof valor === 'number') return valor
+
+  const texto = String(valor).toUpperCase().trim()
+
+  // Extrae únicamente los números y el punto decimal (elimina comas y letras)
+  const montoNumerico = parseFloat(texto.replace(/,/g, '').replace(/[^0-9.]/g, '')) || 0
+
+  // Detecta la divisa especificada en la celda
+  if (texto.includes('EUR') || texto.includes('€')) {
+    const tasaEur = TASAS_USD['EUR'] ?? 1.1
+    return Number((montoNumerico * tasaEur).toFixed(2))
+  }
+  if (texto.includes('MXN') || texto.includes('MXP')) {
+    const tasaMxn = TASAS_USD['MXN'] ?? 0.05
+    return Number((montoNumerico * tasaMxn).toFixed(2))
+  }
+
+  // Si dice USD, contiene $ o no especifica divisa, se toma como USD directo
+  return Number(montoNumerico.toFixed(2))
+}
+
+const obtenerCampo = (item: Record<string, string>, posiblesNombres: string[]): string => {
+  const claveEncontrada = Object.keys(item).find((key) =>
+    posiblesNombres.map((n) => n.toLowerCase()).includes(key.trim().toLowerCase()),
+  )
+  return claveEncontrada && item[claveEncontrada] ? String(item[claveEncontrada]).trim() : ''
+}
+
 const GOOGLE_SHEETS_CSV_URL =
   'https://docs.google.com/spreadsheets/d/e/2PACX-1vQd1bWy-8FYDU0CLVSQJ9YqVTtj2edrgbvvVfaeATeb3wHwT7NhBvLSzV_YZ3UM5yZqLzFmqB7HKnnF/pub?output=csv'
 
@@ -46,36 +84,40 @@ export const fetchProductos = async (query = '', categoria = 'Todas'): Promise<P
     const csvText = await response.text()
 
     return new Promise((resolve) => {
-      Papa.parse(csvText, {
+      Papa.parse<Record<string, string>>(csvText, {
         header: true,
         skipEmptyLines: true,
         complete: (results) => {
-          let productosLimpios: Producto[] = (results.data as Record<string, string>[]).map((item) => {
-            const idVal = item.ID || item.id || item.Codigo || ''
-            const nombreVal = item.Producto || item.Nombre || item.descripcion || 'Sin nombre'
-            const precioVal = parseFloat(String(item.Precio || item.precio || 0)) || 0
+          let productosLimpios: Producto[] = results.data.map((item) => {
+            const idVal = obtenerCampo(item, ['ID', 'id', 'Codigo', 'sku'])
+            const nombreVal =
+              obtenerCampo(item, ['Producto', 'Nombre', 'descripcion']) || 'Sin nombre'
+            const precioBruto = obtenerCampo(item, ['Precio', 'precio', 'Costo'])
+            const imagenVal = obtenerCampo(item, ['Imagen_URL', 'imagen', 'Imagen'])
+            const categoriaVal = obtenerCampo(item, ['Categoria', 'categoria']) || 'General'
+            const stockVal = obtenerCampo(item, ['Stock', 'stock'])
+
+            // CONVERSIÓN A DÓLARES OBLIGATORIA
+            const precioUSD = convertirADolares(precioBruto)
 
             return {
-              id: String(idVal),
-              ID: String(idVal),
+              id: idVal,
+              ID: idVal,
               Producto: nombreVal,
-              Precio: precioVal,
-              Categoria: item.Categoria || item.categoria || 'General',
+              Precio: precioUSD,
+              Categoria: categoriaVal,
               Imagen_URL:
-                item.Imagen_URL ||
-                item.imagen ||
+                imagenVal ||
                 `https://via.placeholder.com/150/ffffff/000000?text=${encodeURIComponent(nombreVal)}`,
-              Stock: parseInt(String(item.Stock || item.stock || 0)) || 0,
+              Stock: parseInt(stockVal) || 0,
               ...item,
             }
           })
 
-          // Filtrado por categoría
           if (categoria !== 'Todas') {
             productosLimpios = productosLimpios.filter((p: Producto) => p.Categoria === categoria)
           }
 
-          // Filtrado por búsqueda en tiempo real
           if (query.trim() !== '') {
             const busqueda = query.toLowerCase().trim()
             productosLimpios = productosLimpios.filter(
@@ -112,7 +154,7 @@ export const procesarOrdenDeCompra = async (carritoPayload: { id: string; cantid
     )
 
     if (productoDb && productoDb.Precio) {
-      const precioNumerico = parseFloat(String(productoDb.Precio)) || 0
+      const precioNumerico = convertirADolares(productoDb.Precio)
       totalCalculado += precioNumerico * itemCarrito.cantidad
     }
   })

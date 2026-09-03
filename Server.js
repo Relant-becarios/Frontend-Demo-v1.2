@@ -4,142 +4,95 @@ import { PrismaClient } from '@prisma/client'
 
 const app = express()
 const prisma = new PrismaClient()
+const PORT = process.env.PORT || 3000
 
 app.use(cors())
 app.use(express.json())
 
-// 1. OBTENER ESTADO COMPLETO DE LA MÁQUINA (INVENTARIO Y BLOQUEO)
-app.get('/api/maquinas/:id', async (req, res) => {
-  const { id } = req.params
-
+// 1. Obtener catálogo completo con filtros de búsqueda y categoría
+app.get('/api/products', async (req, res) => {
   try {
-    let maquina = await prisma.maquina.findUnique({
-      where: { id: id },
-      include: { licencia: true, productos: true },
+    const { search, category } = req.query
+    const whereClause = {}
+
+    if (category && category !== 'Todas') {
+      whereClause.categoria = String(category)
+    }
+
+    if (search) {
+      whereClause.OR = [
+        { nombre: { contains: String(search), mode: 'insensitive' } },
+        { codigo: { contains: String(search), mode: 'insensitive' } },
+      ]
+    }
+
+    const productos = await prisma.producto.findMany({
+      where: whereClause,
+      orderBy: { nombre: 'asc' },
     })
 
-    // SISTEMA AUTO-INICIALIZADOR PARA PRUEBAS: Si la máquina no existe en BD, la creamos con productos base
-    if (!maquina) {
-      maquina = await prisma.maquina.create({
-        data: {
-          id: id,
-          codigoEquipo: `REQ-${id.slice(0, 5).toUpperCase()}`,
-          licencia: {
-            create: {
-              clave: `LIC-${id.slice(0, 5).toUpperCase()}`,
-              activa: true,
+    return res.json(productos)
+  } catch (error) {
+    console.error('Error al consultar productos:', error)
+    return res.status(500).json({ error: 'Error interno al consultar el catálogo' })
+  }
+})
+
+// 2. Transacción de compra atómica (Descuento de stock en PostgreSQL)
+app.post('/api/checkout', async (req, res) => {
+  const { items } = req.body // Formato esperado: [{ id: 'REL-VAL-HP01', cantidad: 2 }]
+
+  if (!items || !Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ success: false, error: 'El carrito está vacío' })
+  }
+
+  try {
+    // Garantiza que todas las deducciones ocurran o se reviertan totalmente si falta stock
+    await prisma.$transaction(async (tx) => {
+      for (const item of items) {
+        const idBuscado = String(item.id).trim()
+
+        // Localiza el producto por su ID o por su Código de referencia
+        const producto = await tx.producto.findFirst({
+          where: {
+            OR: [{ id: idBuscado }, { codigo: idBuscado }],
+          },
+        })
+
+        if (!producto) {
+          throw new Error(`Producto no encontrado en inventario: ${item.id}`)
+        }
+
+        if (producto.stock < item.cantidad) {
+          throw new Error(
+            `Stock insuficiente para "${producto.nombre}". Stock disponible: ${producto.stock}, Unidades solicitadas: ${item.cantidad}`,
+          )
+        }
+
+        // Deducción atómica directa en la base de datos PostgreSQL
+        await tx.producto.update({
+          where: { id: producto.id },
+          data: {
+            stock: {
+              decrement: Number(item.cantidad),
             },
           },
-          productos: {
-            create: [
-              { posicion: 'A1', nombre: 'Válvula Dosificadora AX', precio: 150.0, stock: 5 },
-              { posicion: 'A2', nombre: 'Kit Sellos Industriales', precio: 45.5, stock: 12 },
-              { posicion: 'A3', nombre: 'Pistón de Reemplazo', precio: 85.0, stock: 2 },
-              { posicion: 'B1', nombre: 'Sensor Óptico V2', precio: 120.0, stock: 0 },
-              { posicion: 'B2', nombre: 'Manguera Teflón (1m)', precio: 15.0, stock: 25 },
-              { posicion: 'B3', nombre: 'Boquilla de Precisión', precio: 35.0, stock: 8 },
-            ],
-          },
-        },
-        include: { licencia: true, productos: true },
-      })
-    }
-
-    return res.json(maquina)
-  } catch (error) {
-    console.error(error)
-    return res.status(500).json({ error: 'Error al consultar hardware.' })
-  }
-})
-
-// 2. ACTUALIZACIÓN INSTANTÁNEA DESDE LA CONSOLA DE DUEÑO
-app.put('/api/productos/:id', async (req, res) => {
-  const { id } = req.params
-  const { precio, stock } = req.body
-
-  const parsedPrecio = parseFloat(precio)
-  const parsedStock = parseInt(stock)
-
-  // VALIDACIÓN DE SEGURIDAD AÑADIDA AQUÍ
-  if (isNaN(parsedPrecio) || isNaN(parsedStock)) {
-    return res.status(400).json({ error: 'Valores numéricos inválidos.' })
-  }
-
-  try {
-    const prodActualizado = await prisma.producto.update({
-      where: { id: id },
-      data: {
-        precio: parsedPrecio,
-        stock: parsedStock,
-      },
-    })
-    return res.json(prodActualizado)
-  } catch (error) {
-    console.error(error)
-    return res.status(500).json({ error: 'Error al guardar cambios de hardware.' })
-  }
-})
-
-// 3. OPERACIONES MASIVAS (RESTOCK FINANCIERO Y COMPONENTES)
-app.post('/api/maquinas/:id/operaciones', async (req, res) => {
-  const { id } = req.params
-  const { accion } = req.body
-
-  try {
-    if (accion === 'restock') {
-      await prisma.producto.updateMany({
-        where: { maquinaId: id, stock: { lt: 10 } },
-        data: { stock: 15 },
-      })
-    } else if (accion === 'reset') {
-      await prisma.maquina.update({
-        where: { id: id },
-        data: { presupuestoUso: 0.0 },
-      })
-    }
-
-    const maquinaActualizada = await prisma.maquina.findUnique({
-      where: { id: id },
-      include: { licencia: true, productos: true },
-    })
-    return res.json(maquinaActualizada)
-  } catch (error) {
-    console.error(error)
-    return res.status(500).json({ error: 'Error operativo masivo.' })
-  }
-})
-
-// 4. VALIDACIÓN ORIGINAL DE INICIO DE SESIÓN
-app.post('/api/validar-licencia', async (req, res) => {
-  const { clave, emailUsuario, nombreUsuario } = req.body
-  try {
-    const licencia = await prisma.licencia.findUnique({
-      where: { clave: clave },
-      include: { usuarios: true },
-    })
-    if (!licencia || !licencia.activa) {
-      return res.status(401).json({ error: 'Clave inválida o inactiva.' })
-    }
-    const yaEstaVinculado = licencia.usuarios.some((u) => u.email === emailUsuario)
-    if (!yaEstaVinculado) {
-      if (licencia.usuarios.length >= licencia.maxUsuarios) {
-        return res.status(403).json({ error: 'Límite de usuarios alcanzado.' })
+        })
       }
-      let usuario = await prisma.user.findUnique({ where: { email: emailUsuario } })
-      if (!usuario) {
-        usuario = await prisma.user.create({ data: { email: emailUsuario, nombre: nombreUsuario } })
-      }
-      await prisma.licencia.update({
-        where: { id: licencia.id },
-        data: { usuarios: { connect: { id: usuario.id } } },
-      })
-    }
-    return res.json({ success: true, maquinaId: licencia.maquinaId })
+    })
+
+    return res.json({
+      success: true,
+      mensaje: 'Pago procesado exitosamente y stock descontado en PostgreSQL.',
+    })
   } catch (error) {
-    console.error(error)
-    return res.status(500).json({ error: 'Error de servidor.' })
+    console.error('Error durante la transacción de compra:', error.message)
+    return res.status(400).json({ success: false, error: error.message })
   }
 })
 
-const PORT = 3000
-app.listen(PORT, () => console.log(`🚀 API en puerto ${PORT}`))
+app.listen(PORT, () => {
+  console.log(`Servidor de inventario corriendo en el puerto ${PORT}`)
+})
+
+export default app

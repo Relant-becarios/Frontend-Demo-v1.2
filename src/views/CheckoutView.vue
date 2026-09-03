@@ -8,7 +8,8 @@
         <div class="check-icon">✅</div>
         <h2>¡Pago Procesado con Éxito!</h2>
         <p>
-          Tu orden <strong>#REL-{{ idOrden }}</strong> ha sido confirmada.
+          Tu orden <strong>#REL-{{ idOrden }}</strong> ha sido confirmada y el inventario fue
+          actualizado.
         </p>
         <button class="btn-primary" @click="$router.push('/catalogo')">Volver al Catálogo</button>
       </div>
@@ -18,6 +19,10 @@
         <!-- Formulario de Pago -->
         <section class="payment-section">
           <h2>💳 Pasarela de Pago Simulada</h2>
+
+          <!-- Banner de error si falla la transacción en Postgres -->
+          <div v-if="errorMensaje" class="error-banner">⚠️ {{ errorMensaje }}</div>
+
           <form @submit.prevent="procesarPago" class="payment-form">
             <div class="input-group">
               <label>Titular de la Tarjeta</label>
@@ -110,12 +115,14 @@ const nombreTarjeta = ref('')
 const numeroTarjeta = ref('')
 const expiracion = ref('')
 const cvv = ref('')
+
 const procesando = ref(false)
 const pagoExitoso = ref(false)
 const idOrden = ref('')
+const errorMensaje = ref('')
 const productosDetalle = ref<Producto[]>([])
 
-// Cargar catálogo desde Google Sheets
+// Cargar catálogo desde tu fuente principal para renderizar el resumen
 const cargarCatalogo = async () => {
   try {
     productosDetalle.value = await fetchProductos()
@@ -128,7 +135,7 @@ onMounted(() => {
   cargarCatalogo()
 })
 
-// Mapeo detallado de cada producto en el carrito
+// Mapeo detallado de cada producto en el carrito (nombre, foto, precio convertido)
 const itemsConDetalle = computed(() => {
   return cartStore.items.map((item) => {
     const targetId = String(item.id || '')
@@ -180,15 +187,46 @@ const totalPrecio = computed(() => {
   return itemsConDetalle.value.reduce((acc, item) => acc + item.precio * item.cant, 0)
 })
 
-const procesarPago = () => {
+// PROCESAR PAGO CONTRA EL BACKEND (POSTGRES + PRISMA)
+const procesarPago = async () => {
   procesando.value = true
+  errorMensaje.value = '' // Limpia errores previos
 
-  setTimeout(() => {
-    procesando.value = false
+  try {
+    // Si tu backend corre en otro puerto (ej. 3000), actualiza la URL: 'http://localhost:3000/api/checkout'
+    // Si usas Vercel o proxy en Vite, '/api/checkout' es correcto.
+    const URL_API = import.meta.env.VITE_API_URL
+      ? `${import.meta.env.VITE_API_URL}/api/checkout`
+      : 'http://localhost:3000/api/checkout'
+
+    const respuesta = await fetch(URL_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        items: cartStore.items.map((item) => ({
+          id: item.id,
+          cantidad: item.cant,
+        })),
+      }),
+    })
+
+    const data = await respuesta.json()
+
+    if (!respuesta.ok || !data.success) {
+      throw new Error(data.error || 'No se pudo procesar la orden en la base de datos.')
+    }
+
+    // Éxito
     pagoExitoso.value = true
     idOrden.value = Math.floor(100000 + Math.random() * 900000).toString()
     cartStore.vaciarCarrito()
-  }, 2000)
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'No se pudo procesar la orden en la base de datos.'
+    console.error(err)
+    errorMensaje.value = message
+  } finally {
+    procesando.value = false
+  }
 }
 </script>
 
@@ -221,6 +259,16 @@ const procesarPago = () => {
   margin-bottom: 20px;
   font-size: 1.2rem;
   font-weight: 800;
+}
+.error-banner {
+  background: rgba(255, 0, 0, 0.1);
+  border: 1px solid #ff0000;
+  color: #ff4444;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-weight: bold;
+  font-size: 0.9rem;
 }
 .input-group {
   margin-bottom: 18px;

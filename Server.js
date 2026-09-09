@@ -1,10 +1,16 @@
 import express from 'express'
 import cors from 'cors'
 import { PrismaClient } from '@prisma/client'
+import { MercadoPagoConfig, Preference } from 'mercadopago'
 
 const app = express()
 const prisma = new PrismaClient()
 const PORT = process.env.PORT || 3000
+
+// Configuración del cliente de Mercado Pago
+const mpClient = new MercadoPagoConfig({
+  accessToken: process.env.MP_ACCESS_TOKEN || 'APP_USR-TUS-CREDENCIALES-AQUI',
+})
 
 app.use(cors())
 app.use(express.json())
@@ -38,7 +44,47 @@ app.get('/api/products', async (req, res) => {
   }
 })
 
-// 2. Transacción de compra atómica (Descuento de stock en PostgreSQL)
+// 2. Generar preferencia de pago en Mercado Pago
+app.post('/api/create_preference', async (req, res) => {
+  try {
+    const { items } = req.body
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: 'El carrito está vacío' })
+    }
+
+    // Mapeo de productos al formato estándar de Mercado Pago
+    const bodyItems = items.map((item) => ({
+      id: String(item.id),
+      title: String(item.nombre),
+      quantity: Number(item.cant || item.cantidad),
+      unit_price: Number(item.precio),
+      currency_id: 'USD', // Ajusta a 'MXN' si cobras en Pesos Mexicanos
+    }))
+
+    const preference = new Preference(mpClient)
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
+
+    const result = await preference.create({
+      body: {
+        items: bodyItems,
+        back_urls: {
+          success: `${frontendUrl}/checkout?status=approved`,
+          failure: `${frontendUrl}/checkout?status=failure`,
+          pending: `${frontendUrl}/checkout?status=pending`,
+        },
+        auto_return: 'approved',
+      },
+    })
+
+    return res.json({ id: result.id, init_point: result.init_point })
+  } catch (error) {
+    console.error('Error al crear preferencia en Mercado Pago:', error)
+    return res.status(500).json({ error: 'Error al generar la pasarela de pago' })
+  }
+})
+
+// 3. Transacción de compra atómica (Descuento de stock en PostgreSQL)
 app.post('/api/checkout', async (req, res) => {
   const { items } = req.body // Formato esperado: [{ id: 'REL-VAL-HP01', cantidad: 2 }]
 

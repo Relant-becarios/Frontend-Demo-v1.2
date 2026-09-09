@@ -7,8 +7,28 @@
       </div>
 
       <div class="modal-body" v-if="producto">
-          <img :src="String((producto as Record<string, unknown>)['Imagen URL'] || producto.Imagen_URL || producto.imagen || 'https://via.placeholder.com/300')" class="modal-img">
+        <!-- SECCIÓN DE GALERÍA DE IMÁGENES INTERACTIVA -->
+        <div class="modal-gallery">
+          <!-- 1. VISTA PRINCIPAL GRANDE -->
+          <div class="main-img-box">
+            <img :src="imagenSeleccionada || 'https://via.placeholder.com/300'" class="modal-img-main" />
+          </div>
 
+          <!-- 2, 3, 4. MINIATURAS INTERACTIVAS -->
+          <div v-if="galeria.length > 1" class="thumbnails-row">
+            <div
+              v-for="(img, idx) in galeria"
+              :key="idx"
+              :class="['thumb-card', { active: imagenSeleccionada === img.url }]"
+              @click="imagenSeleccionada = img.url"
+            >
+              <img :src="img.url" :alt="img.label" />
+              <span class="thumb-label">{{ img.label }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- INFORMACIÓN Y DETALLES DEL PRODUCTO -->
         <div class="modal-info">
           <h3 class="producto-titulo">{{ producto.Producto || (producto as Record<string, unknown>)['Producto '] }}</h3>
 
@@ -45,7 +65,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMarketStore } from '@/stores/market'
 import { useCartStore } from '@/stores/cart'
@@ -56,7 +76,51 @@ const router = useRouter()
 
 const producto = computed(() => marketStore.selectedProduct)
 
-// LÓGICA DINÁMICA PARA EXTRAER TODOS LOS DATOS
+// CONSTRUCCIÓN DINÁMICA DE LA GALERÍA DE IMÁGENES
+const galeria = computed(() => {
+  if (!producto.value) return []
+  const prod = producto.value as Record<string, unknown>
+  const items: { label: string; url: string }[] = []
+
+  const front = prod.Imagen_Front_URL || prod.Photo_front_url || prod.Photo_front || prod.Imagen_Front
+  const back = prod.Imagen_Back_URL || prod.Photo_back_url || prod.Photo_back || prod.Imagen_Back
+  const explosion = prod.Imagen_Explosionada_URL || prod.imagen_explosionada || prod.Diagrama
+  const general = prod['Imagen URL'] || prod.Imagen_URL || prod.imagen
+
+  if (front && typeof front === 'string' && front.startsWith('http')) {
+    items.push({ label: 'Front', url: front })
+  }
+  if (back && typeof back === 'string' && back.startsWith('http')) {
+    items.push({ label: 'Back', url: back })
+  }
+  if (explosion && typeof explosion === 'string' && explosion.startsWith('http')) {
+    items.push({ label: 'Diagrama', url: explosion })
+  }
+
+  // Fallback si no hay fotos clasificadas
+  if (items.length === 0 && general && typeof general === 'string') {
+    items.push({ label: 'Vista', url: general })
+  }
+
+  return items
+})
+
+const imagenSeleccionada = ref<string>('')
+
+// SINCRONIZA LA PRIMERA FOTO AL ABRIR UN PRODUCTO
+watch(
+  () => producto.value,
+  () => {
+    if (galeria.value.length > 0 && galeria.value[0]) {
+      imagenSeleccionada.value = galeria.value[0].url
+    } else {
+      imagenSeleccionada.value = 'https://via.placeholder.com/300'
+    }
+  },
+  { immediate: true }
+)
+
+// LÓGICA DINÁMICA PARA EXTRAER ESPECIFICACIONES TÉCNICAS
 const especificacionesTecnicas = computed(() => {
   if (!producto.value) return []
 
@@ -64,7 +128,9 @@ const especificacionesTecnicas = computed(() => {
     'ID', 'id', 'Producto', 'Producto ', 'Descripción', 'Descripcion', 'Detalle',
     'Imagen_URL', 'Imagen URL', 'imagen', 'Precio', 'Categoria',
     'Kits', 'kits', 'Imagen_Explosionada_URL', 'imagen_explosionada',
-    'Manual_URL', 'Plano_URL'
+    'Manual_URL', 'Plano_URL', 'Imagen_Front_URL', 'Imagen_Back_URL',
+    'Photo_front', 'Photo_back', 'Photo_front_url', 'Photo_back_url',
+    'Imagen_Front', 'Imagen_Back'
   ]
 
   const specs = []
@@ -107,12 +173,25 @@ const irARefacciones = () => {
 .close-btn { font-size: 24px; cursor: pointer; color: var(--text-muted); transition: 0.2s; }
 .close-btn:hover { color: var(--accent); }
 .modal-body { display: flex; flex-wrap: wrap; padding: 25px; gap: 25px; }
-.modal-img { flex: 1; min-width: 280px; max-width: 350px; height: auto; max-height: 350px; object-fit: contain; background: white; border-radius: 8px; padding: 10px; border: 1px solid var(--border); align-self: flex-start; }
+
+/* GALERÍA DE IMÁGENES */
+.modal-gallery { flex: 1; min-width: 280px; max-width: 350px; display: flex; flex-direction: column; gap: 12px; align-self: flex-start; }
+.main-img-box { width: 100%; height: 320px; background: white; border-radius: 8px; padding: 10px; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
+.modal-img-main { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+.thumbnails-row { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; }
+.thumb-card { width: 65px; height: 65px; background: white; border-radius: 6px; border: 2px solid var(--border); cursor: pointer; position: relative; flex-shrink: 0; overflow: hidden; padding: 4px; box-sizing: border-box; transition: all 0.2s ease; }
+.thumb-card:hover { border-color: var(--text-muted); }
+.thumb-card.active { border-color: var(--accent); box-shadow: 0 0 8px rgba(255, 0, 0, 0.4); }
+.thumb-card img { width: 100%; height: 100%; object-fit: contain; }
+.thumb-label { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0, 0, 0, 0.75); color: #fff; font-size: 8px; text-align: center; padding: 1px 0; font-weight: bold; }
+
+/* INFORMACIÓN Y DETALLES */
 .modal-info { flex: 1.5; min-width: 300px; display: flex; flex-direction: column; gap: 15px; }
 .producto-titulo { font-size: 24px; font-weight: 800; margin: 0; color: var(--text-main); text-transform: uppercase; letter-spacing: 0.5px; }
 .desc-text { color: var(--text-muted); font-size: 14px; line-height: 1.6; margin: 0; background: var(--bg-input); padding: 12px; border-radius: 6px; border: 1px solid var(--border); }
 
-/* Cuadrícula para muchas especificaciones */
+/* CUADRÍCULA DE ESPECIFICACIONES */
 .specs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; background: var(--bg-input); padding: 15px; border-radius: 6px; border: 1px solid var(--border); max-height: 250px; overflow-y: auto; }
 .spec-item { font-size: 13px; line-height: 1.4; border-bottom: 1px dashed var(--border); padding-bottom: 5px;}
 .spec-item:last-child { border-bottom: none; }

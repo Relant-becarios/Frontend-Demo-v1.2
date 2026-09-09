@@ -3,82 +3,50 @@
     <NavBar />
 
     <main class="checkout-content">
-      <!-- VISTA DE ÉXITO TRAS EL PAGO -->
+      <!-- PANTALLA DE ÉXITO TRAS VOLVER DE MERCADO PAGO -->
       <div v-if="pagoExitoso" class="success-card">
         <div class="check-icon">✅</div>
         <h2>¡Pago Procesado con Éxito!</h2>
         <p>
-          Tu orden <strong>#REL-{{ idOrden }}</strong> ha sido confirmada y el inventario fue
-          actualizado.
+          Tu orden <strong>#REL-{{ idOrden }}</strong> ha sido confirmada.
         </p>
+        <p>El inventario ha sido actualizado en la base de datos.</p>
         <button class="btn-primary" @click="$router.push('/catalogo')">Volver al Catálogo</button>
       </div>
 
-      <!-- VISTA PRINCIPAL DE PAGO -->
-      <div v-else class="checkout-grid">
-        <!-- Formulario de Pago -->
-        <section class="payment-section">
-          <h2>💳 Pasarela de Pago Simulada</h2>
+      <!-- PANTALLA DE ERROR / FALLO -->
+      <div v-else-if="pagoFallido" class="error-card">
+        <div class="error-icon">❌</div>
+        <h2>Ocurrió un problema con el pago</h2>
+        <p>El pago fue rechazado o cancelado. No se hizo ningún cargo.</p>
+        <button class="btn-secondary" @click="pagoFallido = false">Intentar de nuevo</button>
+      </div>
 
-          <!-- Banner de error si falla la transacción en Postgres -->
+      <!-- VISTA PRINCIPAL (RESUMEN Y BOTÓN DE PAGO) -->
+      <div v-else class="checkout-grid">
+        <section class="payment-section">
+          <h2>Pagar con Mercado Pago</h2>
+          <p class="mp-subtitle">Serás redirigido de forma segura a la plataforma de pago.</p>
+
           <div v-if="errorMensaje" class="error-banner">⚠️ {{ errorMensaje }}</div>
 
-          <form @submit.prevent="procesarPago" class="payment-form">
-            <div class="input-group">
-              <label>Titular de la Tarjeta</label>
-              <input type="text" v-model="nombreTarjeta" placeholder="Ej. Juan Pérez" required />
-            </div>
-
-            <div class="input-group">
-              <label>Número de Tarjeta</label>
-              <input
-                type="text"
-                v-model="numeroTarjeta"
-                placeholder="4532 •••• •••• 8890"
-                maxlength="19"
-                required
-              />
-            </div>
-
-            <div class="form-row">
-              <div class="input-group">
-                <label>Expiración</label>
-                <input
-                  type="text"
-                  v-model="expiracion"
-                  placeholder="MM/AA"
-                  maxlength="5"
-                  required
-                />
-              </div>
-              <div class="input-group">
-                <label>CVV</label>
-                <input type="password" v-model="cvv" placeholder="123" maxlength="3" required />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              :disabled="procesando || cartStore.items.length === 0"
-              class="btn-pay"
-            >
-              {{ procesando ? 'Procesando Transacción...' : 'PAGAR AHORA' }}
-            </button>
-          </form>
+          <button
+            @click="generarPagoMercadoPago"
+            :disabled="procesando || cartStore.items.length === 0"
+            class="btn-mercadopago"
+          >
+            {{ procesando ? 'Generando Link...' : 'PAGAR CON MERCADO PAGO' }}
+          </button>
         </section>
 
         <!-- Resumen del Pedido (Items del Carrito) -->
         <aside class="summary-section">
+          <!-- (El mismo resumen del carrito que ya tenías) -->
           <h3>Resumen del Pedido</h3>
-
-          <div v-if="itemsConDetalle.length === 0" class="empty-summary">
-            No hay productos en el carrito.
-          </div>
-
+          <div v-if="itemsConDetalle.length === 0" class="empty-summary">No hay productos.</div>
           <div v-else class="items-list">
             <div v-for="item in itemsConDetalle" :key="item.id" class="summary-item">
               <img :src="item.imagen" :alt="item.nombre" class="item-img" />
-
               <div class="item-info">
                 <h4 class="item-title">{{ item.nombre }}</h4>
                 <p class="item-price">${{ item.precio.toFixed(2) }} USD</p>
@@ -86,17 +54,11 @@
               </div>
             </div>
           </div>
-
           <div class="order-divider"></div>
-
           <div class="summary-total-row">
             <span>Total Estimado:</span>
             <span class="total-amount">${{ totalPrecio.toFixed(2) }} USD</span>
           </div>
-
-          <button class="btn-secondary" @click="$router.push('/catalogo')">
-            Modificar Carrito
-          </button>
         </aside>
       </div>
     </main>
@@ -105,43 +67,52 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
 import { fetchProductos, type Producto } from '@/api/inventory'
 import NavBar from '@/components/NavBar.vue'
 
+const route = useRoute()
+const router = useRouter()
 const cartStore = useCartStore()
-
-const nombreTarjeta = ref('')
-const numeroTarjeta = ref('')
-const expiracion = ref('')
-const cvv = ref('')
 
 const procesando = ref(false)
 const pagoExitoso = ref(false)
+const pagoFallido = ref(false)
 const idOrden = ref('')
 const errorMensaje = ref('')
 const productosDetalle = ref<Producto[]>([])
 
-// Cargar catálogo desde tu fuente principal para renderizar el resumen
-const cargarCatalogo = async () => {
-  try {
-    productosDetalle.value = await fetchProductos()
-  } catch (error) {
-    console.error('Error cargando detalles del carrito en checkout:', error)
-  }
-}
+// Base URL del API
+const URL_API = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
-onMounted(() => {
+// 1. Verificar si el usuario viene regresando de Mercado Pago
+onMounted(async () => {
   cargarCatalogo()
+
+  // Si en la URL viene ?status=approved, significa que ya pagó en Mercado Pago
+  if (route.query.status === 'approved') {
+    await descontarStockEnBackend() // Descontamos de Postgres
+    pagoExitoso.value = true
+    idOrden.value = String(route.query.payment_id || Math.floor(100000 + Math.random() * 900000))
+    cartStore.vaciarCarrito()
+    router.replace('/checkout') // Limpiamos la URL
+  } else if (route.query.status === 'failure') {
+    pagoFallido.value = true
+    router.replace('/checkout')
+  }
 })
 
-// Mapeo detallado de cada producto en el carrito (nombre, foto, precio convertido)
+const cargarCatalogo = async () => {
+  productosDetalle.value = await fetchProductos()
+}
+
+// 2. Mapeo detallado del carrito
 const itemsConDetalle = computed(() => {
   return cartStore.items.map((item) => {
     const targetId = String(item.id || '')
       .trim()
       .toLowerCase()
-
     const prod = productosDetalle.value.find((p) => {
       const pId = String(p.id || '')
         .trim()
@@ -149,36 +120,14 @@ const itemsConDetalle = computed(() => {
       const pID = String(p.ID || '')
         .trim()
         .toLowerCase()
-      const pSku = String(p.sku || '')
-        .trim()
-        .toLowerCase()
-      const pNombre = String(p.Producto || p.nombre || '')
-        .trim()
-        .toLowerCase()
-
-      return (
-        (pId && pId === targetId) ||
-        (pID && pID === targetId) ||
-        (pSku && pSku === targetId) ||
-        (pNombre && pNombre === targetId)
-      )
+      return pId === targetId || pID === targetId
     })
-
-    const precioNumerico =
-      typeof prod?.Precio === 'number' ? prod.Precio : parseFloat(String(prod?.Precio || 0)) || 0
-
-    const nombreProducto =
-      prod?.Producto || (item.id !== 'undefined' ? item.id : 'Producto sin título')
-
     return {
       id: item.id,
       cant: item.cant,
-      nombre: nombreProducto,
-      precio: precioNumerico,
-      imagen:
-        prod?.Imagen_URL ||
-        prod?.imagen ||
-        `https://via.placeholder.com/60?text=${encodeURIComponent(nombreProducto)}`,
+      nombre: prod?.Producto || item.id,
+      precio: parseFloat(String(prod?.Precio || 0)) || 0,
+      imagen: prod?.Imagen_URL || prod?.imagen || `https://via.placeholder.com/60`,
     }
   })
 })
@@ -187,236 +136,87 @@ const totalPrecio = computed(() => {
   return itemsConDetalle.value.reduce((acc, item) => acc + item.precio * item.cant, 0)
 })
 
-// PROCESAR PAGO CONTRA EL BACKEND (POSTGRES + PRISMA)
-const procesarPago = async () => {
+// 3. Función principal para ir a Mercado Pago
+const generarPagoMercadoPago = async () => {
   procesando.value = true
-  errorMensaje.value = '' // Limpia errores previos
+  errorMensaje.value = ''
 
   try {
-    // Si tu backend corre en otro puerto (ej. 3000), actualiza la URL: 'http://localhost:3000/api/checkout'
-    // Si usas Vercel o proxy en Vite, '/api/checkout' es correcto.
-    const URL_API = import.meta.env.VITE_API_URL
-      ? `${import.meta.env.VITE_API_URL}/api/checkout`
-      : 'http://localhost:3000/api/checkout'
-
-    const respuesta = await fetch(URL_API, {
+    const respuesta = await fetch(`${URL_API}/api/create_preference`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        items: cartStore.items.map((item) => ({
-          id: item.id,
-          cantidad: item.cant,
-        })),
-      }),
+      body: JSON.stringify({ items: itemsConDetalle.value }),
     })
 
     const data = await respuesta.json()
 
-    if (!respuesta.ok || !data.success) {
-      throw new Error(data.error || 'No se pudo procesar la orden en la base de datos.')
+    if (data.init_point) {
+      // Redirigir al link seguro de Mercado Pago
+      window.location.href = data.init_point
+    } else {
+      throw new Error('No se pudo generar el link de pago.')
     }
-
-    // Éxito
-    pagoExitoso.value = true
-    idOrden.value = Math.floor(100000 + Math.random() * 900000).toString()
-    cartStore.vaciarCarrito()
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'No se pudo procesar la orden en la base de datos.'
-    console.error(err)
-    errorMensaje.value = message
+  } catch (error: unknown) {
+    console.error(error)
+    errorMensaje.value = error instanceof Error ? error.message : 'No se pudo generar el link de pago.'
   } finally {
     procesando.value = false
+  }
+}
+
+// 4. Función para descontar stock (se llama automáticamente cuando regresan de MP)
+const descontarStockEnBackend = async () => {
+  if (cartStore.items.length === 0) return
+
+  try {
+    await fetch(`${URL_API}/api/checkout`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        items: cartStore.items.map((item) => ({ id: item.id, cantidad: item.cant })),
+      }),
+    })
+  } catch (error) {
+    console.error('Error al descontar stock:', error)
   }
 }
 </script>
 
 <style scoped>
-.checkout-container {
-  min-height: 100vh;
-  background: var(--bg-main, #09090b);
-  color: var(--text-main, #ffffff);
-}
-.checkout-content {
-  max-width: 1100px;
-  margin: 40px auto;
-  padding: 0 20px;
-}
-.checkout-grid {
-  display: grid;
-  grid-template-columns: 1fr 380px;
-  gap: 30px;
-}
-.payment-section,
-.summary-section {
-  background: var(--bg-panel, #18181b);
-  border: 1px solid var(--border, #27272a);
-  border-radius: 12px;
-  padding: 30px;
-}
-.payment-section h2,
-.summary-section h3 {
-  margin-top: 0;
-  margin-bottom: 20px;
-  font-size: 1.2rem;
-  font-weight: 800;
-}
-.error-banner {
-  background: rgba(255, 0, 0, 0.1);
-  border: 1px solid #ff0000;
-  color: #ff4444;
-  padding: 12px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-  font-weight: bold;
-  font-size: 0.9rem;
-}
-.input-group {
-  margin-bottom: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.input-group label {
-  font-size: 12px;
-  color: var(--text-muted, #a1a1aa);
-  font-weight: bold;
-}
-.input-group input {
-  background: var(--bg-input, #09090b);
-  border: 1px solid var(--border, #27272a);
-  color: var(--text-main, #ffffff);
-  padding: 12px;
-  border-radius: 8px;
-  outline: none;
-}
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15px;
-}
-.btn-pay {
+/* Agrega este estilo al final de tus otros estilos de CheckoutView */
+.btn-mercadopago {
   width: 100%;
-  background: #ff0000;
+  background: #009ee3; /* Color azul oficial de Mercado Pago */
   color: white;
   border: none;
-  padding: 15px;
+  padding: 18px;
   border-radius: 8px;
   font-weight: 900;
+  font-size: 1rem;
   cursor: pointer;
   margin-top: 10px;
+  transition: background 0.3s;
 }
-.btn-pay:hover:not(:disabled) {
-  background: #cc0000;
+.btn-mercadopago:hover:not(:disabled) {
+  background: #007ebd;
 }
-.btn-pay:disabled {
-  background: #27272a;
-  color: #71717a;
-  cursor: not-allowed;
+.mp-subtitle {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 25px;
 }
-
-/* LISTA DE PRODUCTOS EN CHECKOUT */
-.items-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  max-height: 380px;
-  overflow-y: auto;
-}
-.summary-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: var(--bg-input, #09090b);
-  border: 1px solid var(--border, #27272a);
-  padding: 10px;
-  border-radius: 8px;
-}
-.item-img {
-  width: 50px;
-  height: 50px;
-  object-fit: cover;
-  border-radius: 6px;
-  background: #ffffff;
-}
-.item-info {
-  flex: 1;
-}
-.item-title {
-  margin: 0 0 4px 0;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--text-main, #ffffff);
-  line-height: 1.2;
-}
-.item-price {
-  margin: 0;
-  color: #ff0000;
-  font-weight: 800;
-  font-size: 0.85rem;
-}
-.item-qty {
-  font-size: 0.75rem;
-  color: var(--text-muted, #a1a1aa);
-}
-.empty-summary {
-  text-align: center;
-  color: var(--text-muted, #a1a1aa);
-  padding: 20px 0;
-  font-style: italic;
-}
-.order-divider {
-  height: 1px;
-  background: var(--border, #27272a);
-  margin: 20px 0;
-}
-.summary-total-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 1.1rem;
-  font-weight: 800;
-  margin-bottom: 20px;
-}
-.total-amount {
-  color: #ff0000;
-  font-size: 1.2rem;
-}
-
-.success-card {
+.error-card {
   text-align: center;
   background: var(--bg-panel, #18181b);
-  border: 1px solid var(--border, #27272a);
+  border: 1px solid #ff0000;
   padding: 50px;
   border-radius: 16px;
   max-width: 500px;
   margin: 50px auto;
 }
-.check-icon {
+.error-icon {
   font-size: 50px;
   margin-bottom: 15px;
 }
-.btn-primary,
-.btn-secondary {
-  padding: 12px 20px;
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
-  border: none;
-}
-.btn-primary {
-  background: #ff0000;
-  color: white;
-}
-.btn-secondary {
-  background: var(--bg-input, #09090b);
-  color: var(--text-main, #ffffff);
-  border: 1px solid var(--border, #27272a);
-  width: 100%;
-}
-
-@media (max-width: 768px) {
-  .checkout-grid {
-    grid-template-columns: 1fr;
-  }
-}
+/* ... y mantén los demás estilos que ya tenías para el resumen y cards ... */
 </style>

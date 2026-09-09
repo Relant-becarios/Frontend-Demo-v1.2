@@ -25,31 +25,28 @@ export interface Producto {
   Precio: number
   Categoria?: string
   Imagen_URL?: string
+  Imagen_Front_URL?: string
+  Imagen_Back_URL?: string
+  Imagen_Explosionada_URL?: string
   imagen?: string
   Stock?: number
-  Imagen_Explosionada_URL?: string
-  imagen_explosionada?: string
   Kits?: Kit[]
   kits?: Kit[]
   [key: string]: unknown
 }
 
-// Tasas de cambio fijas a Dólares (USD)
 const TASAS_USD: Record<string, number> = {
-  MXN: 0.05, // 1 MXN = 0.05 USD (ej. 8,232.84 MXN ≈ $411.64 USD)
+  MXN: 0.05,
   MXP: 0.05,
-  EUR: 1.1, // 1 EUR = 1.10 USD
+  EUR: 1.1,
   USD: 1.0,
 }
 
-// Elimina comas y letras, detecta divisa y convierte estrictamente a USD
 export const convertirADolares = (valor: unknown): number => {
   if (valor === undefined || valor === null) return 0
   if (typeof valor === 'number') return valor
 
   const texto = String(valor).toUpperCase().trim()
-
-  // Elimina comas de miles y cualquier carácter que no sea número o punto decimal
   const textoSinComas = texto.replace(/,/g, '')
   const montoNumerico = parseFloat(textoSinComas.replace(/[^0-9.]/g, '')) || 0
 
@@ -91,22 +88,45 @@ export const fetchProductos = async (query = '', categoria = 'Todas'): Promise<P
               obtenerCampo(item, ['Descripcion', 'Producto', 'Nombre', 'descripcion']) ||
               'Sin nombre'
             const precioBruto = obtenerCampo(item, ['Precio', 'precio', 'Costo'])
-            const imagenVal = obtenerCampo(item, ['Imagen_URL', 'imagen', 'Imagen'])
+
+            // Detección flexible de fotos
+            const imgFront = obtenerCampo(item, [
+              'Imagen_Front_URL',
+              'Photo_front_url',
+              'Photo_front',
+              'Imagen_Front',
+            ])
+            const imgBack = obtenerCampo(item, [
+              'Imagen_Back_URL',
+              'Photo_back_url',
+              'Photo_back',
+              'Imagen_Back',
+            ])
+            const imgExplosionada = obtenerCampo(item, [
+              'Imagen_Explosionada_URL',
+              'imagen_explosionada',
+              'Diagrama',
+            ])
+            const imagenVal =
+              obtenerCampo(item, ['Imagen_URL', 'imagen', 'Imagen']) || imgFront || imgBack
+
             const categoriaVal = obtenerCampo(item, ['Categoria', 'categoria']) || 'General'
             const stockVal = obtenerCampo(item, ['Stock', 'stock'])
-
             const precioUSD = convertirADolares(precioBruto)
 
             return {
-              ...item, // Colocado primero para no sobrescribir los valores procesados
+              ...item,
               id: idVal,
               ID: idVal,
               Producto: nombreVal,
-              Precio: precioUSD, // Asigna el número limpio e inmune a errores de parseo
+              Precio: precioUSD,
               Categoria: categoriaVal,
               Imagen_URL:
                 imagenVal ||
-                `https://via.placeholder.com/150/ffffff/000000?text=${encodeURIComponent(nombreVal)}`,
+                `https://via.placeholder.com/150?text=${encodeURIComponent(nombreVal)}`,
+              Imagen_Front_URL: imgFront || imagenVal,
+              Imagen_Back_URL: imgBack,
+              Imagen_Explosionada_URL: imgExplosionada,
               Stock: parseInt(stockVal) || 0,
             }
           })
@@ -139,31 +159,4 @@ export const fetchProductos = async (query = '', categoria = 'Todas'): Promise<P
     console.error('Error al cargar catálogo desde Google Sheets:', error)
     return []
   }
-}
-
-export const procesarOrdenDeCompra = async (carritoPayload: { id: string; cantidad: number }[]) => {
-  const productosBaseDeDatos = await fetchProductos()
-  let totalCalculado = 0
-
-  carritoPayload.forEach((itemCarrito) => {
-    const productoDb = productosBaseDeDatos.find(
-      (p) => String(p.id || p.ID) === itemCarrito.id || p.Producto === itemCarrito.id,
-    )
-
-    if (productoDb && productoDb.Precio) {
-      totalCalculado += productoDb.Precio * itemCarrito.cantidad
-    }
-  })
-
-  return new Promise((resolve) => {
-    setTimeout(
-      () =>
-        resolve({
-          success: true,
-          mensaje: 'Orden procesada y cotización enviada correctamente.',
-          totalCalculadoEnBackend: totalCalculado,
-        }),
-      1500,
-    )
-  })
 }

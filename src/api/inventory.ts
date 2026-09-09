@@ -60,11 +60,17 @@ export const convertirADolares = (valor: unknown): number => {
   return Number(montoNumerico.toFixed(2))
 }
 
+// BÚSQUEDA POR ORDEN STRICTO DE PRIORIDAD
 const obtenerCampo = (item: Record<string, string>, posiblesNombres: string[]): string => {
-  const claveEncontrada = Object.keys(item).find((key) =>
-    posiblesNombres.map((n) => n.toLowerCase()).includes(key.trim().toLowerCase()),
-  )
-  return claveEncontrada && item[claveEncontrada] ? String(item[claveEncontrada]).trim() : ''
+  for (const nombre of posiblesNombres) {
+    const claveEncontrada = Object.keys(item).find(
+      (key) => key.trim().toLowerCase() === nombre.trim().toLowerCase(),
+    )
+    if (claveEncontrada && item[claveEncontrada] && String(item[claveEncontrada]).trim() !== '') {
+      return String(item[claveEncontrada]).trim()
+    }
+  }
+  return ''
 }
 
 const GOOGLE_SHEETS_CSV_URL =
@@ -72,7 +78,7 @@ const GOOGLE_SHEETS_CSV_URL =
 
 export const fetchProductos = async (query = '', categoria = 'Todas'): Promise<Producto[]> => {
   try {
-    const response = await fetch(GOOGLE_SHEETS_CSV_URL)
+    const response = await fetch(`${GOOGLE_SHEETS_CSV_URL}&t=${Date.now()}`)
     if (!response.ok) throw new Error('No se pudo descargar el archivo de Google Sheets')
 
     const csvText = await response.text()
@@ -89,26 +95,28 @@ export const fetchProductos = async (query = '', categoria = 'Todas'): Promise<P
               'Sin nombre'
             const precioBruto = obtenerCampo(item, ['Precio', 'precio', 'Costo'])
 
-            // Detección flexible de fotos
+            // Priozitiza estrictamente las columnas con URL
             const imgFront = obtenerCampo(item, [
               'Imagen_Front_URL',
               'Photo_front_url',
-              'Photo_front',
               'Imagen_Front',
             ])
-            const imgBack = obtenerCampo(item, [
-              'Imagen_Back_URL',
-              'Photo_back_url',
-              'Photo_back',
-              'Imagen_Back',
-            ])
+            const imgBack = obtenerCampo(item, ['Imagen_Back_URL', 'Photo_back_url', 'Imagen_Back'])
             const imgExplosionada = obtenerCampo(item, [
               'Imagen_Explosionada_URL',
               'imagen_explosionada',
               'Diagrama',
             ])
-            const imagenVal =
-              obtenerCampo(item, ['Imagen_URL', 'imagen', 'Imagen']) || imgFront || imgBack
+            const imgGeneral = obtenerCampo(item, ['Imagen_URL', 'imagen', 'Imagen'])
+
+            // Asigna la foto que contenga una URL HTTP válida
+            const validarUrl = (val: string) => (val && val.startsWith('http') ? val : '')
+
+            const urlFrontValida = validarUrl(imgFront)
+            const urlBackValida = validarUrl(imgBack)
+            const urlGeneralValida = validarUrl(imgGeneral)
+
+            const portada = urlFrontValida || urlGeneralValida || urlBackValida
 
             const categoriaVal = obtenerCampo(item, ['Categoria', 'categoria']) || 'General'
             const stockVal = obtenerCampo(item, ['Stock', 'stock'])
@@ -122,11 +130,10 @@ export const fetchProductos = async (query = '', categoria = 'Todas'): Promise<P
               Precio: precioUSD,
               Categoria: categoriaVal,
               Imagen_URL:
-                imagenVal ||
-                `https://via.placeholder.com/150?text=${encodeURIComponent(nombreVal)}`,
-              Imagen_Front_URL: imgFront || imagenVal,
-              Imagen_Back_URL: imgBack,
-              Imagen_Explosionada_URL: imgExplosionada,
+                portada || `https://via.placeholder.com/150?text=${encodeURIComponent(nombreVal)}`,
+              Imagen_Front_URL: urlFrontValida || portada,
+              Imagen_Back_URL: urlBackValida,
+              Imagen_Explosionada_URL: validarUrl(imgExplosionada),
               Stock: parseInt(stockVal) || 0,
             }
           })

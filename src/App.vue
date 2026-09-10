@@ -20,15 +20,22 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import { RouterView } from 'vue-router'
 import { useUiStore } from '@/stores/ui'
 import CartPanel from '@/components/CartPanel.vue'
 import MenuPanel from '@/components/MenuPanel.vue'
 import AuthModal from '@/components/AuthModal.vue'
 import ChatPanel from '@/components/ChatPanel.vue'
-import ThemeToggleFloating from '@/components/ThemeToggleFloating.vue' // Importamos
+import ThemeToggleFloating from '@/components/ThemeToggleFloating.vue'
 
 const uiStore = useUiStore()
+
+onMounted(() => {
+  // Asegura que el tema por defecto al entrar sea claro
+  const tema = localStorage.getItem('theme') || 'light'
+  document.documentElement.setAttribute('data-theme', tema)
+})
 </script>
 
 <style>
@@ -43,10 +50,17 @@ const uiStore = useUiStore()
   --text-muted: #6a737d;
   --border: #d1d5da;
   --accent: #d32f2f;
+
+  /* Compatibilidad */
+  --fondo-principal: #ffffff;
+  --fondo-tarjeta: #ffffff;
+  --color-texto: #1c1e21;
+  --borde: #d1d5da;
 }
 
-/* MODO OSCURO */
-[data-theme='dark'] {
+/* MODO OSCURO (Solo al activar el alternador) */
+[data-theme='dark'],
+:root[data-theme='dark'] {
   --bg-main: #0f1215;
   --bg-panel: #161b22;
   --bg-input: #0d1117;
@@ -54,6 +68,12 @@ const uiStore = useUiStore()
   --text-muted: #8b949e;
   --border: #30363d;
   --accent: #ff0000;
+
+  /* Compatibilidad */
+  --fondo-principal: #0f1215;
+  --fondo-tarjeta: #161b22;
+  --color-texto: #ffffff;
+  --borde: #30363d;
 }
 
 body {

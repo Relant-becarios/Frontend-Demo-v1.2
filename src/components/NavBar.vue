@@ -35,11 +35,10 @@
     <div v-else style="flex-grow: 1"></div>
 
     <div class="nav-actions">
-      <!-- Sistema de Login -->
-      <div v-if="authStore.usuarioActual" class="user-menu">
-        <span class="user-email">{{ authStore.usuarioActual.email?.split('@')[0] }}</span>
-        <button class="btn-logout" @click.stop="authStore.cerrarSesion">Salir</button>
-      </div>
+      <!-- Usuario autenticado / Botón de ingreso -->
+      <span v-if="authStore.usuarioActual" class="user-email">
+        {{ authStore.usuarioActual.email?.split('@')[0] }}
+      </span>
       <div v-else class="login-trigger" @click.stop="uiStore.toggleAuthModal">Ingresar</div>
 
       <!-- ACCIONES EXCLUSIVAS DEL CATÁLOGO -->
@@ -47,7 +46,7 @@
         <!-- Botón AI -->
         <div class="btn-ai" @click.stop="uiStore.toggleChat" title="Asistente AI">✨ AI</div>
 
-        <!-- Botón Carrito con SVG Autoadaptable -->
+        <!-- Botón Carrito -->
         <div class="cart-icon" @click.stop="uiStore.toggleCart" title="Carrito de Compras">
           <svg
             width="24"
@@ -71,6 +70,30 @@
           <span></span><span></span><span></span>
         </div>
       </div>
+
+      <!-- BOTÓN DE APAGADO (UBICADO AL EXTREMO DERECHO) -->
+      <button
+        v-if="authStore.usuarioActual"
+        class="btn-logout"
+        @click.stop="authStore.cerrarSesion"
+        title="Cerrar sesión"
+      >
+        <svg
+          class="power-icon"
+          viewBox="0 0 24 24"
+          width="20"
+          height="20"
+          stroke="currentColor"
+          stroke-width="2.5"
+          fill="none"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
+          <line x1="12" y1="2" x2="12" y2="12"></line>
+        </svg>
+        <span class="logout-text">Salir</span>
+      </button>
     </div>
   </nav>
 </template>
@@ -282,23 +305,38 @@ const limpiarInicio = () => {
   color: white;
   border-color: #ff0000;
 }
-.user-menu {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
 .user-email {
   font-size: 13px;
   color: var(--text-muted);
   font-weight: bold;
 }
+
+/* BOTÓN DE SALIR (EXTREMO DERECHO) */
 .btn-logout {
   background: transparent;
-  color: #ff4444;
-  border: 1px solid #ff4444;
-  border-radius: 4px;
-  padding: 4px 8px;
+  border: none;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
+  padding: 2px;
+  gap: 2px;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
+}
+.btn-logout:hover {
+  transform: scale(1.1);
+  opacity: 0.85;
+}
+.power-icon {
+  stroke: #ff0000;
+}
+.logout-text {
+  color: #ff0000;
   font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
 }
 </style>

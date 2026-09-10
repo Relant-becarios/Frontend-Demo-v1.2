@@ -32,7 +32,6 @@ import ThemeToggleFloating from '@/components/ThemeToggleFloating.vue'
 const uiStore = useUiStore()
 
 onMounted(() => {
-  // Asegura que el tema por defecto al entrar sea claro
   const tema = localStorage.getItem('theme') || 'light'
   document.documentElement.setAttribute('data-theme', tema)
 })
@@ -50,6 +49,7 @@ onMounted(() => {
   --text-muted: #6a737d;
   --border: #d1d5da;
   --accent: #d32f2f;
+  --accent-hover: #b71c1c;
 
   /* Compatibilidad */
   --fondo-principal: #ffffff;
@@ -68,6 +68,7 @@ onMounted(() => {
   --text-muted: #8b949e;
   --border: #30363d;
   --accent: #ff0000;
+  --accent-hover: #cc0000;
 
   /* Compatibilidad */
   --fondo-principal: #0f1215;

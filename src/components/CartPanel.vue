@@ -16,22 +16,28 @@
             <div class="item-info">
               <h4 class="item-title">{{ item.nombre }}</h4>
               <p class="item-price">${{ item.precio.toFixed(2) }} USD</p>
+              <p class="item-price-mxn">~ ${{ (item.precio * TIPO_CAMBIO_MXN).toFixed(2) }} MXN</p>
 
               <div class="item-qty-row">
                 <label>Cant:</label>
                 <input
                   type="number"
                   min="1"
+                  :max="item.stock > 0 ? item.stock : 1"
                   :value="item.cant"
                   @change="
                     (e) =>
-                      cartStore.actualizarCantidad(
+                      validarYActualizarCantidad(
                         item.id,
                         Number((e.target as HTMLInputElement).value),
+                        item.stock,
                       )
                   "
                   class="qty-input"
                 />
+                <span class="stock-badge" :class="{ 'no-stock': item.stock <= 0 }">
+                  (Stock: {{ item.stock }})
+                </span>
               </div>
             </div>
 
@@ -47,12 +53,28 @@
       </div>
 
       <div class="cart-footer">
-        <div class="summary-row">
-          <span>Total Estimado:</span>
-          <span class="total-price">${{ totalPrecio.toFixed(2) }} USD</span>
+        <div class="summary-box">
+          <div class="summary-row text-muted">
+            <span>Base USD:</span>
+            <span>${{ subtotalUSD.toFixed(2) }} USD</span>
+          </div>
+          <div class="summary-row">
+            <span>Subtotal (sin IVA):</span>
+            <span>${{ subtotalMXN.toFixed(2) }} MXN</span>
+          </div>
+          <div class="summary-row text-muted">
+            <span>IVA (16%):</span>
+            <span>${{ ivaMXN.toFixed(2) }} MXN</span>
+          </div>
+          <div class="summary-row total-row">
+            <span>Total (con IVA):</span>
+            <span class="total-price">${{ totalMXN.toFixed(2) }} MXN</span>
+          </div>
         </div>
 
-        <p class="disclaimer">🔒 El cálculo oficial se validará en el servidor.</p>
+        <p class="disclaimer">
+          🔒 Tipo de cambio aplicado: $1 USD = ${{ TIPO_CAMBIO_MXN.toFixed(2) }} MXN
+        </p>
 
         <p v-if="!authStore.usuarioActual" class="auth-warning">
           Debes iniciar sesión para procesar la orden.
@@ -86,6 +108,9 @@ const uiStore = useUiStore()
 const procesando = ref(false)
 const productosDetalle = ref<Producto[]>([])
 
+const TIPO_CAMBIO_MXN = 20.0
+const TASA_IVA = 0.16
+
 const cargarCatalogo = async () => {
   try {
     const data = await fetchProductos()
@@ -99,7 +124,6 @@ onMounted(() => {
   cargarCatalogo()
 })
 
-// Refresca la información automáticamente cada vez que el usuario abre el panel
 watch(
   () => uiStore.isCartOpen,
   (isOpen) => {
@@ -115,7 +139,6 @@ const itemsConDetalle = computed(() => {
       .trim()
       .toLowerCase()
 
-    // Búsqueda flexible tolerante a ID, ID alternativo, SKU o Nombre de Producto
     const prod = productosDetalle.value.find((p) => {
       const pId = String(p.id || '')
         .trim()
@@ -141,6 +164,9 @@ const itemsConDetalle = computed(() => {
     const precioNumerico =
       typeof prod?.Precio === 'number' ? prod.Precio : parseFloat(String(prod?.Precio || 0)) || 0
 
+    const stockNumerico =
+      typeof prod?.Stock === 'number' ? prod.Stock : parseInt(String(prod?.Stock || 0)) || 0
+
     const nombreProducto =
       prod?.Producto || (item.id !== 'undefined' ? item.id : 'Producto sin título')
 
@@ -149,6 +175,7 @@ const itemsConDetalle = computed(() => {
       cant: item.cant,
       nombre: nombreProducto,
       precio: precioNumerico,
+      stock: stockNumerico,
       imagen:
         prod?.Imagen_URL ||
         prod?.imagen ||
@@ -157,8 +184,36 @@ const itemsConDetalle = computed(() => {
   })
 })
 
-const totalPrecio = computed(() => {
+// VALIDA QUE LA CANTIDAD NO SUPERE EL STOCK DISPONIBLE
+const validarYActualizarCantidad = (id: string, nuevaCant: number, stockMaximo: number) => {
+  if (isNaN(nuevaCant) || nuevaCant < 1) {
+    cartStore.actualizarCantidad(id, 1)
+    return
+  }
+
+  if (stockMaximo > 0 && nuevaCant > stockMaximo) {
+    alert(`Solo hay ${stockMaximo} unidades disponibles en stock para este producto.`)
+    cartStore.actualizarCantidad(id, stockMaximo)
+    return
+  }
+
+  cartStore.actualizarCantidad(id, nuevaCant)
+}
+
+const subtotalUSD = computed(() => {
   return itemsConDetalle.value.reduce((acc, item) => acc + item.precio * item.cant, 0)
+})
+
+const subtotalMXN = computed(() => {
+  return subtotalUSD.value * TIPO_CAMBIO_MXN
+})
+
+const ivaMXN = computed(() => {
+  return subtotalMXN.value * TASA_IVA
+})
+
+const totalMXN = computed(() => {
+  return subtotalMXN.value + ivaMXN.value
 })
 
 const procesarCompra = () => {
@@ -284,10 +339,16 @@ const procesarCompra = () => {
 }
 
 .item-price {
-  margin: 0 0 6px 0;
+  margin: 0;
   color: #ff0000;
   font-weight: 800;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
+}
+
+.item-price-mxn {
+  margin: 0 0 6px 0;
+  color: var(--text-muted, #a1a1aa);
+  font-size: 0.75rem;
 }
 
 .item-qty-row {
@@ -299,7 +360,7 @@ const procesarCompra = () => {
 }
 
 .qty-input {
-  width: 50px;
+  width: 55px;
   background: var(--bg-panel, #18181b);
   border: 1px solid var(--border, #27272a);
   color: var(--text-main, #ffffff);
@@ -307,6 +368,16 @@ const procesarCompra = () => {
   padding: 2px 6px;
   text-align: center;
   outline: none;
+}
+
+.stock-badge {
+  font-size: 0.72rem;
+  color: var(--text-muted, #a1a1aa);
+  font-weight: 600;
+}
+
+.stock-badge.no-stock {
+  color: #ef4444;
 }
 
 .btn-remove {
@@ -328,22 +399,45 @@ const procesarCompra = () => {
   background: var(--bg-panel, #18181b);
 }
 
+.summary-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--bg-input, #09090b);
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border, #27272a);
+  margin-bottom: 10px;
+}
+
 .summary-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 1.1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.summary-row.text-muted {
+  font-size: 0.8rem;
+  color: var(--text-muted, #a1a1aa);
+}
+
+.summary-row.total-row {
+  font-size: 1.05rem;
   font-weight: 800;
-  margin-bottom: 8px;
+  border-top: 1px dashed var(--border, #27272a);
+  padding-top: 6px;
+  margin-top: 4px;
 }
 
 .total-price {
   color: #ff0000;
-  font-size: 1.2rem;
+  font-size: 1.15rem;
 }
 
 .disclaimer {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: var(--text-muted, #a1a1aa);
   text-align: center;
   margin-bottom: 12px;

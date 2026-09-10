@@ -7,11 +7,19 @@
       </div>
 
       <div class="modal-body" v-if="producto">
-        <!-- SECCIÓN DE GALERÍA DE IMÁGENES INTERACTIVA -->
+        <!-- SECCIÓN DE GALERÍA DE IMÁGENES INTERACTIVA CON ZOOM -->
         <div class="modal-gallery">
-          <!-- 1. VISTA PRINCIPAL GRANDE -->
-          <div class="main-img-box">
-            <img :src="imagenSeleccionada || 'https://via.placeholder.com/300'" class="modal-img-main" />
+          <!-- 1. VISTA PRINCIPAL GRANDE CON LUPA/ZOOM TIPO AMAZON -->
+          <div 
+            class="main-img-box"
+            @mousemove="handleMouseMove"
+            @mouseleave="handleMouseLeave"
+          >
+            <img 
+              :src="imagenSeleccionada || 'https://via.placeholder.com/300'" 
+              class="modal-img-main" 
+              :style="zoomStyle"
+            />
           </div>
 
           <!-- 2, 3, 4. MINIATURAS INTERACTIVAS -->
@@ -38,14 +46,23 @@
 
           <div class="specs-grid">
             <div class="spec-item">
-              <strong>Categoría:</strong> <span>{{ producto.Categoria || 'N/A' }}</span>
+              <strong>CATEGORÍA:</strong> <span>{{ producto.Categoria || 'N/A' }}</span>
             </div>
             <div class="spec-item">
               <strong>SKU / ID:</strong> <span>{{ producto.id || producto.ID || 'N/A' }}</span>
             </div>
+            <div class="spec-item">
+              <strong>NO. DE PARTE:</strong> <span>{{ (producto as Record<string, unknown>)['no. De parte'] || producto.id || 'N/A' }}</span>
+            </div>
+            <div class="spec-item">
+              <strong>STOCK:</strong> <span>{{ producto.Stock ?? 0 }}</span>
+            </div>
+            <div class="spec-item">
+              <strong>PRECIO:</strong> <span class="price-text">${{ Number(producto.Precio || 0).toFixed(2) }} USD</span>
+            </div>
 
             <div class="spec-item" v-for="spec in especificacionesTecnicas" :key="spec.etiqueta">
-              <strong>{{ spec.etiqueta }}:</strong> <span>{{ spec.valor }}</span>
+              <strong>{{ spec.etiqueta.toUpperCase() }}:</strong> <span>{{ spec.valor }}</span>
             </div>
           </div>
 
@@ -76,6 +93,39 @@ const router = useRouter()
 
 const producto = computed(() => marketStore.selectedProduct)
 
+// LÓGICA DE ZOOM INTERACTIVO TIPO AMAZON
+const isZoomed = ref(false)
+const transformOrigin = ref('center center')
+
+const handleMouseMove = (e: MouseEvent) => {
+  const target = e.currentTarget as HTMLElement
+  if (!target) return
+  const { left, top, width, height } = target.getBoundingClientRect()
+  const x = ((e.clientX - left) / width) * 100
+  const y = ((e.clientY - top) / height) * 100
+  transformOrigin.value = `${x.toFixed(2)}% ${y.toFixed(2)}%`
+  isZoomed.value = true
+}
+
+const handleMouseLeave = () => {
+  isZoomed.value = false
+}
+
+const zoomStyle = computed(() => {
+  if (!isZoomed.value) {
+    return {
+      transform: 'scale(1)',
+      transformOrigin: 'center center',
+      transition: 'transform 0.2s ease, transform-origin 0.1s ease'
+    }
+  }
+  return {
+    transform: 'scale(2.5)',
+    transformOrigin: transformOrigin.value,
+    transition: 'transform 0.05s ease-out, transform-origin 0.05s ease-out'
+  }
+})
+
 // CONSTRUCCIÓN DINÁMICA DE LA GALERÍA DE IMÁGENES
 const galeria = computed(() => {
   if (!producto.value) return []
@@ -97,7 +147,6 @@ const galeria = computed(() => {
     items.push({ label: 'Diagrama', url: explosion })
   }
 
-  // Fallback si no hay fotos clasificadas
   if (items.length === 0 && general && typeof general === 'string') {
     items.push({ label: 'Vista', url: general })
   }
@@ -107,10 +156,10 @@ const galeria = computed(() => {
 
 const imagenSeleccionada = ref<string>('')
 
-// SINCRONIZA LA PRIMERA FOTO AL ABRIR UN PRODUCTO
 watch(
   () => producto.value,
   () => {
+    isZoomed.value = false
     if (galeria.value.length > 0 && galeria.value[0]) {
       imagenSeleccionada.value = galeria.value[0].url
     } else {
@@ -120,13 +169,13 @@ watch(
   { immediate: true }
 )
 
-// LÓGICA DINÁMICA PARA EXTRAER ESPECIFICACIONES TÉCNICAS
 const especificacionesTecnicas = computed(() => {
   if (!producto.value) return []
 
   const camposIgnorados = [
     'ID', 'id', 'Producto', 'Producto ', 'Descripción', 'Descripcion', 'Detalle',
-    'Imagen_URL', 'Imagen URL', 'imagen', 'Precio', 'Categoria',
+    'Imagen_URL', 'Imagen URL', 'imagen', 'Precio', 'precio', 'Categoria', 'categoria',
+    'Stock', 'stock', 'no. De parte', 'no. de parte', 'no_de_parte',
     'Kits', 'kits', 'Imagen_Explosionada_URL', 'imagen_explosionada',
     'Manual_URL', 'Plano_URL', 'Imagen_Front_URL', 'Imagen_Back_URL',
     'Photo_front', 'Photo_back', 'Photo_front_url', 'Photo_back_url',
@@ -174,10 +223,30 @@ const irARefacciones = () => {
 .close-btn:hover { color: var(--accent); }
 .modal-body { display: flex; flex-wrap: wrap; padding: 25px; gap: 25px; }
 
-/* GALERÍA DE IMÁGENES */
+/* GALERÍA DE IMÁGENES CON ZOOM */
 .modal-gallery { flex: 1; min-width: 280px; max-width: 350px; display: flex; flex-direction: column; gap: 12px; align-self: flex-start; }
-.main-img-box { width: 100%; height: 320px; background: white; border-radius: 8px; padding: 10px; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
-.modal-img-main { max-width: 100%; max-height: 100%; object-fit: contain; }
+.main-img-box { 
+  width: 100%; 
+  height: 320px; 
+  background: white; 
+  border-radius: 8px; 
+  padding: 10px; 
+  border: 1px solid var(--border); 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  box-sizing: border-box; 
+  overflow: hidden; 
+  cursor: zoom-in; 
+  position: relative; 
+}
+.modal-img-main { 
+  max-width: 100%; 
+  max-height: 100%; 
+  object-fit: contain; 
+  pointer-events: none; 
+  will-change: transform, transform-origin; 
+}
 
 .thumbnails-row { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; }
 .thumb-card { width: 65px; height: 65px; background: white; border-radius: 6px; border: 2px solid var(--border); cursor: pointer; position: relative; flex-shrink: 0; overflow: hidden; padding: 4px; box-sizing: border-box; transition: all 0.2s ease; }
@@ -193,13 +262,45 @@ const irARefacciones = () => {
 
 /* CUADRÍCULA DE ESPECIFICACIONES */
 .specs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; background: var(--bg-input); padding: 15px; border-radius: 6px; border: 1px solid var(--border); max-height: 250px; overflow-y: auto; }
-.spec-item { font-size: 13px; line-height: 1.4; border-bottom: 1px dashed var(--border); padding-bottom: 5px;}
+.spec-item { font-size: 13px; line-height: 1.4; border-bottom: 1px dashed var(--border); padding-bottom: 5px; }
 .spec-item:last-child { border-bottom: none; }
-.spec-item strong { color: var(--text-muted); display: block; font-size: 11px; text-transform: uppercase; margin-bottom: 2px;}
+
+/* ETIQUETAS EN ROJO */
+.spec-item strong { 
+  color: var(--accent, #d32f2f); 
+  display: block; 
+  font-size: 11px; 
+  text-transform: uppercase; 
+  margin-bottom: 2px;
+  font-weight: 800;
+}
+
+.price-text {
+  font-weight: bold;
+  color: var(--text-main);
+}
 
 .modal-actions { margin-top: 15px; display: flex; flex-direction: column; gap: 10px; }
-.btn-primary { background: var(--accent); color: white; border: none; padding: 14px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 13px; letter-spacing: 0.5px; }
-.btn-primary:hover { background: var(--accent-hover); box-shadow: 0 4px 12px rgba(255,0,0,0.3); }
+
+/* BOTÓN PRINCIPAL CON HOVER PROTEGIDO */
+.btn-primary { 
+  background: var(--accent, #d32f2f); 
+  color: #ffffff !important; 
+  border: none; 
+  padding: 14px; 
+  border-radius: 6px; 
+  font-weight: bold; 
+  cursor: pointer; 
+  transition: background 0.2s ease, box-shadow 0.2s ease; 
+  font-size: 13px; 
+  letter-spacing: 0.5px; 
+}
+.btn-primary:hover { 
+  background: var(--accent-hover, #b71c1c) !important; 
+  color: #ffffff !important; 
+  box-shadow: 0 4px 12px rgba(211, 47, 47, 0.4); 
+}
+
 .btn-secondary { background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border); padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 13px; }
 .btn-secondary:hover { background: var(--border); }
 .btn-refacciones { background: #e0a800; color: #000; border: none; padding: 14px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 13px; letter-spacing: 0.5px; }

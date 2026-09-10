@@ -34,19 +34,8 @@ const uiStore = useUiStore()
 <style>
 /* --- VARIABLES GLOBALES DE CSS --- */
 
-/* MODO OSCURO (Por defecto) */
+/* MODO CLARO (Por defecto) */
 :root {
-  --bg-main: #0f1215;
-  --bg-panel: #161b22;
-  --bg-input: #0d1117;
-  --text-main: #ffffff;
-  --text-muted: #8b949e;
-  --border: #30363d;
-  --accent: #ff0000;
-}
-
-/* MODO CLARO */
-[data-theme='light'] {
   --bg-main: #f4f6f8;
   --bg-panel: #ffffff;
   --bg-input: #e9ecef;
@@ -56,13 +45,23 @@ const uiStore = useUiStore()
   --accent: #d32f2f;
 }
 
+/* MODO OSCURO */
+[data-theme='dark'] {
+  --bg-main: #0f1215;
+  --bg-panel: #161b22;
+  --bg-input: #0d1117;
+  --text-main: #ffffff;
+  --text-muted: #8b949e;
+  --border: #30363d;
+  --accent: #ff0000;
+}
+
 body {
   margin: 0;
   font-family: 'Segoe UI', Arial, sans-serif;
   background: var(--bg-main);
   color: var(--text-main);
   overflow-x: hidden;
-  /* Transición suave para todos los colores */
   transition:
     background 0.3s ease,
     color 0.3s ease,
@@ -76,6 +75,6 @@ body {
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.8);
-  z-index: 20000; /* keep below the menu-panel */
+  z-index: 20000;
 }
 </style>

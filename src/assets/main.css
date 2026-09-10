@@ -1,21 +1,22 @@
 :root {
-  /* ── Tema Oscuro (Por defecto) ── */
-  --fondo-principal: #0f1215;
-  --fondo-tarjeta: #161b22;
-  --color-texto: #ffffff;
-  --color-acento: #ff0000;
-  --borde: #30363d;
-}
-
-:root[data-theme='light'],
-body.light-mode,
-body.light,
-body.claro {
+  /* ── Tema Claro (Por defecto) ── */
   --fondo-principal: #ffffff;
   --fondo-tarjeta: #f8f9fa;
   --color-texto: #1a1a1a;
   --color-acento: #ff0000;
   --borde: #e5e7eb;
+}
+
+:root[data-theme='dark'],
+body.dark-mode,
+body.dark,
+body.oscuro {
+  /* ── Tema Oscuro ── */
+  --fondo-principal: #0f1215;
+  --fondo-tarjeta: #161b22;
+  --color-texto: #ffffff;
+  --color-acento: #ff0000;
+  --borde: #30363d;
 }
 
 body {
